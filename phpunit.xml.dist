@@ -9,6 +9,9 @@
       <directory>./vendor</directory>
     </exclude>
   </coverage>
+  <php>
+    <ini name="memory_limit" value="-1" />
+  </php>
   <testsuites>
     <testsuite name="Test suite">
       <directory>./tests</directory>
