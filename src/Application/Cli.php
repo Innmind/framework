@@ -3,7 +3,10 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework\Application;
 
-use Innmind\Framework\Environment;
+use Innmind\Framework\{
+    Environment,
+    Cli\Command\Defer,
+};
 use Innmind\CLI\{
     Command,
     Commands,
@@ -117,9 +120,10 @@ final class Cli
     public function run(CliEnv $env): CliEnv
     {
         $container = ($this->container)($this->os, $this->env);
-
-        /** @var Sequence<Command> */
-        $commands = $this->commands->map($container);
+        $commands = $this->commands->map(static fn($service) => new Defer(
+            $service,
+            $container,
+        ));
 
         return $commands->match(
             static fn($first, $rest) => Commands::of($first, ...$rest->toList())($env),

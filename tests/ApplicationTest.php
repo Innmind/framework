@@ -384,4 +384,65 @@ class ApplicationTest extends TestCase
                 ));
             });
     }
+
+    public function testUnusedCommandIsNotLoaded()
+    {
+        $this
+            ->forAll(
+                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Elements::of(true, false),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($inputs, $interactive, $variables) {
+                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                    ->command(static fn() => new class implements Command {
+                        public function __invoke(Console $console): Console
+                        {
+                            return $console->output(Str::of('my command A output'));
+                        }
+
+                        public function usage(): string
+                        {
+                            return 'my-command-a';
+                        }
+                    })
+                    ->command(static fn() => new class implements Command {
+                        public function __construct()
+                        {
+                            throw new \Exception;
+                        }
+
+                        public function __invoke(Console $console): Console
+                        {
+                            return $console->output(Str::of('my command B output'));
+                        }
+
+                        public function usage(): string
+                        {
+                            return 'my-command-b';
+                        }
+                    });
+
+                $env = $app->runCli(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name', 'my-command-a'],
+                    $variables,
+                    '/',
+                ));
+
+                $this->assertSame(['my command A output'], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+            });
+    }
 }
