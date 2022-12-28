@@ -445,4 +445,142 @@ class ApplicationTest extends TestCase
                 ));
             });
     }
+
+    public function testDecoratingCommands()
+    {
+        $this
+            ->forAll(
+                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Elements::of(true, false),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($inputs, $interactive, $variables) {
+                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                    ->command(static fn() => new class implements Command {
+                        public function __invoke(Console $console): Console
+                        {
+                            return $console->output(Str::of('my command output'));
+                        }
+
+                        public function usage(): string
+                        {
+                            return 'my-command';
+                        }
+                    })
+                    ->mapCommand(static fn($command) => new class($command) implements Command {
+                        public function __construct(
+                            private Command $inner,
+                        ) {
+                        }
+
+                        public function __invoke(Console $console): Console
+                        {
+                            return ($this->inner)($console)->output(Str::of('decorated'));
+                        }
+
+                        public function usage(): string
+                        {
+                            return $this->inner->usage();
+                        }
+                    });
+
+                $env = $app->runCli(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name'],
+                    $variables,
+                    '/',
+                ));
+
+                $this->assertSame(['my command output', 'decorated'], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+            });
+    }
+
+    public function testCommandDecoratorIsAppliedOnlyOnTheWishedOne()
+    {
+        $this
+            ->forAll(
+                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Elements::of(true, false),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($inputs, $interactive, $variables) {
+                static $testRuns = 0;
+                ++$testRuns;
+                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                    ->command(static fn() => new class implements Command {
+                        public function __invoke(Console $console): Console
+                        {
+                            return $console->output(Str::of('my command output A'));
+                        }
+
+                        public function usage(): string
+                        {
+                            return 'my-command-a';
+                        }
+                    })
+                    ->command(static fn() => new class implements Command {
+                        public function __invoke(Console $console): Console
+                        {
+                            return $console->output(Str::of('my command output B'));
+                        }
+
+                        public function usage(): string
+                        {
+                            return 'my-command-b';
+                        }
+                    })
+                    ->mapCommand(static fn($command) => new class($command) implements Command {
+                        private int $instances;
+                        public function __construct(
+                            private Command $inner,
+                        ) {
+                            static $instances = 0;
+                            $this->instances = ++$instances;
+                        }
+
+                        public function __invoke(Console $console): Console
+                        {
+                            return ($this->inner)($console)->output(Str::of((string) $this->instances));
+                        }
+
+                        public function usage(): string
+                        {
+                            return $this->inner->usage();
+                        }
+                    });
+
+                $env = $app->runCli(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name', 'my-command-b'],
+                    $variables,
+                    '/',
+                ));
+
+                $this->assertSame(['my command output B', (string) $testRuns], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+            });
+    }
 }

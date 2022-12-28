@@ -31,21 +31,26 @@ final class Cli
     private $container;
     /** @var Sequence<string> */
     private Sequence $commands;
+    /** @var callable(Command, ServiceLocator, OperatingSystem, Environment): Command */
+    private $mapCommand;
 
     /**
      * @param callable(OperatingSystem, Environment): Container $container
      * @param Sequence<string> $commands
+     * @param callable(Command, ServiceLocator, OperatingSystem, Environment): Command $mapCommand
      */
     private function __construct(
         OperatingSystem $os,
         Environment $env,
         callable $container,
         Sequence $commands,
+        callable $mapCommand,
     ) {
         $this->os = $os;
         $this->env = $env;
         $this->container = $container;
         $this->commands = $commands;
+        $this->mapCommand = $mapCommand;
     }
 
     public static function of(OperatingSystem $os, Environment $env): self
@@ -55,6 +60,7 @@ final class Cli
             $env,
             static fn() => new Container,
             Sequence::strings(),
+            static fn(Command $command) => $command,
         );
     }
 
@@ -68,6 +74,7 @@ final class Cli
             $map($this->env, $this->os),
             $this->container,
             $this->commands,
+            $this->mapCommand,
         );
     }
 
@@ -81,6 +88,7 @@ final class Cli
             $this->env,
             $this->container,
             $this->commands,
+            $this->mapCommand,
         );
     }
 
@@ -98,6 +106,7 @@ final class Cli
                 static fn($service) => $definition($service, $os, $env),
             ),
             $this->commands,
+            $this->mapCommand,
         );
     }
 
@@ -114,15 +123,47 @@ final class Cli
             $self->env,
             $self->container,
             ($self->commands)($reference),
+            $self->mapCommand,
+        );
+    }
+
+    /**
+     * @param callable(Command, ServiceLocator, OperatingSystem, Environment): Command $map
+     */
+    public function mapCommand(callable $map): self
+    {
+        return new self(
+            $this->os,
+            $this->env,
+            $this->container,
+            $this->commands,
+            fn(
+                Command $command,
+                ServiceLocator $service,
+                OperatingSystem $os,
+                Environment $env,
+            ) => $map(
+                ($this->mapCommand)($command, $service, $os, $env),
+                $service,
+                $os,
+                $env,
+            ),
         );
     }
 
     public function run(CliEnv $env): CliEnv
     {
         $container = ($this->container)($this->os, $this->env);
+        $mapCommand = fn(Command $command): Command => ($this->mapCommand)(
+            $command,
+            $container,
+            $this->os,
+            $this->env,
+        );
         $commands = $this->commands->map(static fn($service) => new Defer(
             $service,
             $container,
+            $mapCommand,
         ));
 
         return $commands->match(

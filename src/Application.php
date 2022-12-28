@@ -61,6 +61,14 @@ final class Application
         return new self($this->app->command($command));
     }
 
+    /**
+     * @param callable(Command, ServiceLocator, OperatingSystem, Environment): Command $map
+     */
+    public function mapCommand(callable $map): self
+    {
+        return new self($this->app->mapCommand($map));
+    }
+
     public function runCli(CliEnv $env): CliEnv
     {
         return $this->app->run($env);

@@ -16,19 +16,32 @@ final class Defer implements Command
 {
     private string $service;
     private ServiceLocator $locate;
+    /** @var callable(Command): Command */
+    private $map;
     private ?Command $command = null;
 
+    /**
+     * @param callable(Command): Command $map
+     */
     public function __construct(
         string $service,
         ServiceLocator $locate,
+        callable $map,
     ) {
         $this->service = $service;
         $this->locate = $locate;
+        $this->map = $map;
     }
 
     public function __invoke(Console $console): Console
     {
-        return $this->command()($console);
+        // we map the command when running it instead of when loading it to
+        // avoid loading the decorator multiple times for a same script as
+        // multiple commands can be loaded before finding the one "usage" that
+        // matches the expected one
+        $command = ($this->map)($this->command());
+
+        return $command($console);
     }
 
     /**
