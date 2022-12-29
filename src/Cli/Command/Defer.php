@@ -45,14 +45,11 @@ final class Defer implements Command
     }
 
     /**
-     * @psalm-pure
+     * @psalm-mutation-free
      */
     public function usage(): string
     {
-        /**
-         * @psalm-suppress ImpureVariable
-         * @psalm-suppress ImpureMethodCall
-         */
+        /** @psalm-suppress ImpureMethodCall */
         return $this->command()->usage();
     }
 
