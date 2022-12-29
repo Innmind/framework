@@ -6,17 +6,16 @@ namespace Innmind\Framework\Application;
 use Innmind\Framework\{
     Environment,
     Http\Routes,
+    Http\Router,
 };
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\{
     Container,
     Builder,
 };
-use Innmind\Router\RequestMatcher\RequestMatcher;
 use Innmind\Http\Message\{
     ServerRequest,
     Response,
-    StatusCode,
 };
 
 final class Http
@@ -129,14 +128,8 @@ final class Http
             $this->os,
             $this->env,
         );
-        $match = new RequestMatcher($routes->toSequence());
+        $handle = new Router($routes);
 
-        return $match($request)->match(
-            static fn($route) => $route->respondTo($request),
-            static fn() => new Response\Response(
-                StatusCode::notFound,
-                $request->protocolVersion(),
-            ),
-        );
+        return $handle($request);
     }
 }
