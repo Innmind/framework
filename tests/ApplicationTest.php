@@ -6,6 +6,7 @@ namespace Tests\Innmind\Framework;
 use Innmind\Framework\{
     Application,
     Middleware,
+    Middleware\Optional,
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
@@ -663,6 +664,65 @@ class ApplicationTest extends TestCase
                 ));
 
                 $this->assertSame(['bar', 'baz', 'foo'], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+            });
+    }
+
+    public function testOptionalMiddleware()
+    {
+        $this
+            ->forAll(
+                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Elements::of(true, false),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($inputs, $interactive, $variables) {
+                $middleware = new class implements Middleware {
+                    public function __invoke(Application $app): Application
+                    {
+                        return $app->mapEnvironment(static fn($env) => $env->with('foo', 'bar'));
+                    }
+                };
+
+                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                    ->map(Optional::of(Unknown::class, static fn() => throw new \Exception))
+                    ->map(Optional::of($middleware::class, static fn() => $middleware))
+                    ->command(static fn($_, $__, $env) => new class($env) implements Command {
+                        public function __construct(
+                            private $env,
+                        ) {
+                        }
+
+                        public function __invoke(Console $console): Console
+                        {
+                            return $console->output(Str::of($this->env->get('foo')));
+                        }
+
+                        public function usage(): string
+                        {
+                            return 'watev';
+                        }
+                    });
+
+                $env = $app->runCli(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name'],
+                    $variables,
+                    '/',
+                ));
+
+                $this->assertSame(['bar'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
