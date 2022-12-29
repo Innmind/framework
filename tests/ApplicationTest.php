@@ -3,7 +3,10 @@ declare(strict_types = 1);
 
 namespace Tests\Innmind\Framework;
 
-use Innmind\Framework\Application;
+use Innmind\Framework\{
+    Application,
+    Middleware,
+};
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
     Environment\InMemory,
@@ -577,6 +580,89 @@ class ApplicationTest extends TestCase
                 ));
 
                 $this->assertSame(['my command output B', (string) $testRuns], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+            });
+    }
+
+    public function testMiddleware()
+    {
+        $this
+            ->forAll(
+                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Elements::of(true, false),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($inputs, $interactive, $variables) {
+                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                    ->map(new class implements Middleware {
+                        public function __invoke(Application $app): Application
+                        {
+                            return $app->mapEnvironment(static fn($env) => $env->with('foo', 'bar'));
+                        }
+                    })
+                    ->map(new class implements Middleware {
+                        public function __invoke(Application $app): Application
+                        {
+                            return $app->mapEnvironment(static function($env) {
+                                if ($env->get('foo') !== 'bar') {
+                                    throw new \Exception;
+                                }
+
+                                return $env->with('bar', 'baz');
+                            });
+                        }
+                    })
+                    ->map(new class implements Middleware {
+                        public function __invoke(Application $app): Application
+                        {
+                            return $app->mapEnvironment(static function($env) {
+                                if ($env->get('bar') !== 'baz') {
+                                    throw new \Exception;
+                                }
+
+                                return $env->with('baz', 'foo');
+                            });
+                        }
+                    })
+                    ->command(static fn($_, $__, $env) => new class($env) implements Command {
+                        public function __construct(
+                            private $env,
+                        ) {
+                        }
+
+                        public function __invoke(Console $console): Console
+                        {
+                            return $console
+                                ->output(Str::of($this->env->get('foo')))
+                                ->output(Str::of($this->env->get('bar')))
+                                ->output(Str::of($this->env->get('baz')));
+                        }
+
+                        public function usage(): string
+                        {
+                            return 'watev';
+                        }
+                    });
+
+                $env = $app->runCli(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name'],
+                    $variables,
+                    '/',
+                ));
+
+                $this->assertSame(['bar', 'baz', 'foo'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,

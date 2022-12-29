@@ -44,6 +44,11 @@ final class Application
         return new self($this->app->mapOperatingSystem($map));
     }
 
+    public function map(Middleware $map): self
+    {
+        return $map($this);
+    }
+
     /**
      * @param non-empty-string $name
      * @param callable(ServiceLocator, OperatingSystem, Environment): object $definition
