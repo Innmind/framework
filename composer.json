@@ -21,7 +21,8 @@
         "innmind/immutable": "^4.9",
         "innmind/di": "^1.1",
         "ramsey/uuid": "^4.7",
-        "innmind/url": "^4.1"
+        "innmind/url": "^4.1",
+        "innmind/filesystem": "^6.0"
     },
     "autoload": {
         "psr-4": {
