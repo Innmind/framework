@@ -5,12 +5,12 @@ namespace Innmind\Framework\Main;
 
 use Innmind\Framework\Application;
 use Innmind\CLI\{
-    Main as MainCli,
+    Main,
     Environment,
 };
 use Innmind\OperatingSystem\OperatingSystem;
 
-abstract class Main extends MainCli
+abstract class Cli extends Main
 {
     protected function main(Environment $env, OperatingSystem $os): Environment
     {
