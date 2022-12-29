@@ -7,6 +7,7 @@ use Innmind\Framework\{
     Environment,
     Http\Routes,
     Http\Router,
+    Http\RequestHandler,
 };
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\{
@@ -26,21 +27,26 @@ final class Http
     private $container;
     /** @var callable(Routes, Container, OperatingSystem, Environment): Routes */
     private $routes;
+    /** @var callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler */
+    private $mapRequestHandler;
 
     /**
      * @param callable(OperatingSystem, Environment): Builder $container
      * @param callable(Routes, Container, OperatingSystem, Environment): Routes $routes
+     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
      */
     private function __construct(
         OperatingSystem $os,
         Environment $env,
         callable $container,
         callable $routes,
+        callable $mapRequestHandler,
     ) {
         $this->os = $os;
         $this->env = $env;
         $this->container = $container;
         $this->routes = $routes;
+        $this->mapRequestHandler = $mapRequestHandler;
     }
 
     public static function of(OperatingSystem $os, Environment $env): self
@@ -50,6 +56,7 @@ final class Http
             $env,
             static fn() => Builder::new(),
             static fn(Routes $routes) => $routes,
+            static fn(RequestHandler $handler) => $handler,
         );
     }
 
@@ -63,6 +70,7 @@ final class Http
             $map($this->env, $this->os),
             $this->container,
             $this->routes,
+            $this->mapRequestHandler,
         );
     }
 
@@ -76,6 +84,7 @@ final class Http
             $this->env,
             $this->container,
             $this->routes,
+            $this->mapRequestHandler,
         );
     }
 
@@ -93,6 +102,7 @@ final class Http
                 static fn($service) => $definition($service, $os, $env),
             ),
             $this->routes,
+            $this->mapRequestHandler,
         );
     }
 
@@ -116,6 +126,31 @@ final class Http
                 $os,
                 $env,
             ),
+            $this->mapRequestHandler,
+        );
+    }
+
+    /**
+     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
+     */
+    public function mapRequestHandler(callable $map): self
+    {
+        return new self(
+            $this->os,
+            $this->env,
+            $this->container,
+            $this->routes,
+            fn(
+                RequestHandler $handler,
+                Container $container,
+                OperatingSystem $os,
+                Environment $env,
+            ) => $map(
+                ($this->mapRequestHandler)($handler, $container, $os, $env),
+                $container,
+                $os,
+                $env,
+            ),
         );
     }
 
@@ -128,7 +163,7 @@ final class Http
             $this->os,
             $this->env,
         );
-        $handle = new Router($routes);
+        $handle = ($this->mapRequestHandler)(new Router($routes), $container, $this->os, $this->env);
 
         return $handle($request);
     }

@@ -8,6 +8,7 @@ use Innmind\Framework\{
     Middleware,
     Middleware\Optional,
     Middleware\LoadDotEnv,
+    Http\RequestHandler,
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
@@ -17,12 +18,14 @@ use Innmind\CLI\{
 };
 use Innmind\Router\Route;
 use Innmind\Http\{
+    Message\ServerRequest as ServerRequestInterface,
     Message\ServerRequest\ServerRequest,
     Message\Response,
     Message\Environment,
     Message\Method,
     Message\StatusCode,
     ProtocolVersion,
+    Header\ContentType,
 };
 use Innmind\Url\{
     Url,
@@ -878,6 +881,60 @@ class ApplicationTest extends TestCase
                 ));
 
                 $this->assertSame($responseB, $response);
+            });
+    }
+
+    public function testMapRequestHandler()
+    {
+        $this
+            ->forAll(
+                FUrl::any(),
+                Set\Elements::of(...Method::cases()),
+                Set\Elements::of(...ProtocolVersion::cases()),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($url, $method, $protocol, $variables) {
+                $app = Application::http(Factory::build(), new Environment(Map::of(...$variables)))
+                    ->mapRequestHandler(static fn($inner) => new class($inner) implements RequestHandler {
+                        public function __construct(
+                            private $inner,
+                        ) {
+                        }
+
+                        public function __invoke(ServerRequestInterface $request): Response
+                        {
+                            $response = ($this->inner)($request);
+
+                            return new Response\Response(
+                                $response->statusCode(),
+                                $response->protocolVersion(),
+                                $response->headers()(ContentType::of('application', 'octet-stream')),
+                            );
+                        }
+                    });
+
+                $response = $app->run(new ServerRequest(
+                    $url,
+                    $method,
+                    $protocol,
+                ));
+
+                $this->assertSame(StatusCode::notFound, $response->statusCode());
+                $this->assertSame($protocol, $response->protocolVersion());
+                $this->assertSame(
+                    'Content-Type: application/octet-stream',
+                    $response->headers()->get('content-type')->match(
+                        static fn($header) => $header->toString(),
+                        static fn() => null,
+                    ),
+                );
             });
     }
 }

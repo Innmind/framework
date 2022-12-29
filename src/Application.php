@@ -3,7 +3,10 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework;
 
-use Innmind\Framework\Http\Routes;
+use Innmind\Framework\Http\{
+    Routes,
+    RequestHandler,
+};
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\CLI\{
     Environment as CliEnv,
@@ -100,6 +103,18 @@ final class Application
     {
         if ($this->app instanceof Application\Http) {
             return new self($this->app->appendRoutes($append));
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
+     */
+    public function mapRequestHandler(callable $map): self
+    {
+        if ($this->app instanceof Application\Http) {
+            return new self($this->app->mapRequestHandler($map));
         }
 
         return $this;
