@@ -18,6 +18,7 @@ use Innmind\Http\Message\{
     ServerRequest,
     Response,
 };
+use Innmind\Immutable\Maybe;
 
 final class Http
 {
@@ -29,11 +30,14 @@ final class Http
     private $routes;
     /** @var callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler */
     private $mapRequestHandler;
+    /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> */
+    private Maybe $notFound;
 
     /**
      * @param callable(OperatingSystem, Environment): Builder $container
      * @param callable(Routes, Container, OperatingSystem, Environment): Routes $routes
      * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
+     * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> $notFound
      */
     private function __construct(
         OperatingSystem $os,
@@ -41,22 +45,28 @@ final class Http
         callable $container,
         callable $routes,
         callable $mapRequestHandler,
+        Maybe $notFound,
     ) {
         $this->os = $os;
         $this->env = $env;
         $this->container = $container;
         $this->routes = $routes;
         $this->mapRequestHandler = $mapRequestHandler;
+        $this->notFound = $notFound;
     }
 
     public static function of(OperatingSystem $os, Environment $env): self
     {
+        /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> */
+        $notFound = Maybe::nothing();
+
         return new self(
             $os,
             $env,
             static fn() => Builder::new(),
             static fn(Routes $routes) => $routes,
             static fn(RequestHandler $handler) => $handler,
+            $notFound,
         );
     }
 
@@ -71,6 +81,7 @@ final class Http
             $this->container,
             $this->routes,
             $this->mapRequestHandler,
+            $this->notFound,
         );
     }
 
@@ -85,6 +96,7 @@ final class Http
             $this->container,
             $this->routes,
             $this->mapRequestHandler,
+            $this->notFound,
         );
     }
 
@@ -103,6 +115,7 @@ final class Http
             ),
             $this->routes,
             $this->mapRequestHandler,
+            $this->notFound,
         );
     }
 
@@ -127,6 +140,7 @@ final class Http
                 $env,
             ),
             $this->mapRequestHandler,
+            $this->notFound,
         );
     }
 
@@ -151,6 +165,22 @@ final class Http
                 $os,
                 $env,
             ),
+            $this->notFound,
+        );
+    }
+
+    /**
+     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
+     */
+    public function notFoundRequestHandler(callable $handle): self
+    {
+        return new self(
+            $this->os,
+            $this->env,
+            $this->container,
+            $this->routes,
+            $this->mapRequestHandler,
+            Maybe::just($handle),
         );
     }
 
@@ -163,7 +193,18 @@ final class Http
             $this->os,
             $this->env,
         );
-        $handle = ($this->mapRequestHandler)(new Router($routes), $container, $this->os, $this->env);
+        $router = new Router(
+            $routes,
+            $this->notFound->map(
+                fn($handle) => fn(ServerRequest $request) => $handle(
+                    $request,
+                    $container,
+                    $this->os,
+                    $this->env,
+                ),
+            ),
+        );
+        $handle = ($this->mapRequestHandler)($router, $container, $this->os, $this->env);
 
         return $handle($request);
     }

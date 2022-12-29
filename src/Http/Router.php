@@ -9,6 +9,7 @@ use Innmind\Http\Message\{
     StatusCode,
 };
 use Innmind\Router\RequestMatcher\RequestMatcher;
+use Innmind\Immutable\Maybe;
 
 /**
  * @internal
@@ -16,22 +17,31 @@ use Innmind\Router\RequestMatcher\RequestMatcher;
 final class Router implements RequestHandler
 {
     private Routes $routes;
+    /** @var Maybe<\Closure(ServerRequest): Response> */
+    private Maybe $notFound;
 
-    public function __construct(Routes $routes)
+    /**
+     * @param Maybe<\Closure(ServerRequest): Response> $notFound
+     */
+    public function __construct(Routes $routes, Maybe $notFound)
     {
         $this->routes = $routes;
+        $this->notFound = $notFound;
     }
 
     public function __invoke(ServerRequest $request): Response
     {
         $match = new RequestMatcher($this->routes->toSequence());
 
-        return $match($request)->match(
-            static fn($route) => $route->respondTo($request),
-            static fn() => new Response\Response(
-                StatusCode::notFound,
-                $request->protocolVersion(),
-            ),
-        );
+        return $match($request)
+            ->map(static fn($route) => $route->respondTo(...))
+            ->otherwise(fn() => $this->notFound)
+            ->match(
+                static fn($handle) => $handle($request),
+                static fn() => new Response\Response(
+                    StatusCode::notFound,
+                    $request->protocolVersion(),
+                ),
+            );
     }
 }

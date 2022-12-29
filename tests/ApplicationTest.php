@@ -937,4 +937,40 @@ class ApplicationTest extends TestCase
                 );
             });
     }
+
+    public function testAllowToSpecifyHttpNotFoundRequestHandler()
+    {
+        $this
+            ->forAll(
+                FUrl::any(),
+                Set\Elements::of(...Method::cases()),
+                Set\Elements::of(...ProtocolVersion::cases()),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($url, $method, $protocol, $variables) {
+                $expected = $this->createMock(Response::class);
+
+                $app = Application::http(Factory::build(), new Environment(Map::of(...$variables)))
+                    ->notFoundRequestHandler(function($request) use ($protocol, $expected) {
+                        $this->assertSame($protocol, $request->protocolVersion());
+
+                        return $expected;
+                    });
+
+                $response = $app->run(new ServerRequest(
+                    $url,
+                    $method,
+                    $protocol,
+                ));
+
+                $this->assertSame($expected, $response);
+            });
+    }
 }

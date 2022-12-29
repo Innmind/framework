@@ -120,6 +120,18 @@ final class Application
         return $this;
     }
 
+    /**
+     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
+     */
+    public function notFoundRequestHandler(callable $handle): self
+    {
+        if ($this->app instanceof Application\Http) {
+            return new self($this->app->notFoundRequestHandler($handle));
+        }
+
+        return $this;
+    }
+
     public function run(CliEnv|ServerRequest $input): CliEnv|Response
     {
         /** @psalm-suppress PossiblyInvalidArgument Let the app crash in case of a misuse */
