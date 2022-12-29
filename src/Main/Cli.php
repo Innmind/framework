@@ -14,7 +14,11 @@ abstract class Cli extends Main
 {
     protected function main(Environment $env, OperatingSystem $os): Environment
     {
-        return self::configure(Application::cli($os, $env->variables()))->runCli($env);
+        /**
+         * @psalm-suppress InvalidReturnStatement Let the app crash in case of a misuse
+         * @var Environment
+         */
+        return self::configure(Application::cli($os, $env->variables()))->run($env);
     }
 
     abstract protected function configure(Application $app): Application;

@@ -3,21 +3,32 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework;
 
+use Innmind\Framework\Http\Routes;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\CLI\{
     Environment as CliEnv,
     Command,
 };
 use Innmind\DI\Container;
+use Innmind\Http\Message\{
+    ServerRequest,
+    Response,
+    Environment as HttpEnvironment,
+};
 use Innmind\Immutable\Map;
 
 final class Application
 {
-    private Application\Cli $app;
+    private Application\Cli|Application\Http $app;
 
-    private function __construct(Application\Cli $app)
+    private function __construct(Application\Cli|Application\Http $app)
     {
         $this->app = $app;
+    }
+
+    public static function http(OperatingSystem $os, HttpEnvironment $env): self
+    {
+        return new self(Application\Http::of($os, Environment::http($env)));
     }
 
     /**
@@ -63,7 +74,11 @@ final class Application
      */
     public function command(callable $command): self
     {
-        return new self($this->app->command($command));
+        if ($this->app instanceof Application\Cli) {
+            return new self($this->app->command($command));
+        }
+
+        return $this;
     }
 
     /**
@@ -71,11 +86,28 @@ final class Application
      */
     public function mapCommand(callable $map): self
     {
-        return new self($this->app->mapCommand($map));
+        if ($this->app instanceof Application\Cli) {
+            return new self($this->app->mapCommand($map));
+        }
+
+        return $this;
     }
 
-    public function runCli(CliEnv $env): CliEnv
+    /**
+     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
+     */
+    public function appendRoutes(callable $append): self
     {
-        return $this->app->run($env);
+        if ($this->app instanceof Application\Http) {
+            return new self($this->app->appendRoutes($append));
+        }
+
+        return $this;
+    }
+
+    public function run(CliEnv|ServerRequest $input): CliEnv|Response
+    {
+        /** @psalm-suppress PossiblyInvalidArgument Let the app crash in case of a misuse */
+        return $this->app->run($input);
     }
 }

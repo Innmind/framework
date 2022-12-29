@@ -15,7 +15,20 @@ use Innmind\CLI\{
     Command,
     Console,
 };
-use Innmind\Url\Path;
+use Innmind\Router\Route;
+use Innmind\Http\{
+    Message\ServerRequest\ServerRequest,
+    Message\Response,
+    Message\Environment,
+    Message\Method,
+    Message\StatusCode,
+    ProtocolVersion,
+};
+use Innmind\Url\{
+    Url,
+    Path,
+};
+use Innmind\UrlTemplate\Template;
 use Innmind\Immutable\{
     Map,
     Str,
@@ -25,6 +38,7 @@ use Innmind\BlackBox\{
     PHPUnit\BlackBox,
     Set,
 };
+use Fixtures\Innmind\Url\Url as FUrl;
 
 class ApplicationTest extends TestCase
 {
@@ -49,7 +63,7 @@ class ApplicationTest extends TestCase
             ->then(function($inputs, $interactive, $arguments, $variables) {
                 $app = Application::cli(Factory::build(), Map::of(...$variables));
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     $arguments,
@@ -92,7 +106,7 @@ class ApplicationTest extends TestCase
                         return $in;
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     $arguments,
@@ -118,7 +132,7 @@ class ApplicationTest extends TestCase
                         return $env;
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     $arguments,
@@ -162,7 +176,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -218,7 +232,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name', 'my-command-a'],
@@ -232,7 +246,7 @@ class ApplicationTest extends TestCase
                     static fn() => null,
                 ));
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name', 'my-command-b'],
@@ -269,7 +283,7 @@ class ApplicationTest extends TestCase
                 $app = Application::cli(Factory::build(), Map::of(...$variables))
                     ->service($service, static fn() => throw new \Exception);
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     $arguments,
@@ -321,7 +335,7 @@ class ApplicationTest extends TestCase
                     })
                     ->service($service, static fn() => Str::of('my command output'));
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -375,7 +389,7 @@ class ApplicationTest extends TestCase
                     ->service($serviceA, static fn($get) => Str::of('my command output')->append($get($serviceB)->toString()))
                     ->service($serviceB, static fn() => Str::of(' twice'));
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -436,7 +450,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name', 'my-command-a'],
@@ -497,7 +511,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -574,7 +588,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name', 'my-command-b'],
@@ -657,7 +671,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -716,7 +730,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -769,7 +783,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->runCli(InMemory::of(
+                $env = $app->run(InMemory::of(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -782,6 +796,88 @@ class ApplicationTest extends TestCase
                     static fn($exit) => $exit,
                     static fn() => null,
                 ));
+            });
+    }
+
+    public function testHttpApplicationReturnsNotFoundByDefault()
+    {
+        $this
+            ->forAll(
+                FUrl::any(),
+                Set\Elements::of(...Method::cases()),
+                Set\Elements::of(...ProtocolVersion::cases()),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($url, $method, $protocol, $variables) {
+                $app = Application::http(Factory::build(), new Environment(Map::of(...$variables)));
+
+                $response = $app->run(new ServerRequest(
+                    $url,
+                    $method,
+                    $protocol,
+                ));
+
+                $this->assertSame(StatusCode::notFound, $response->statusCode());
+                $this->assertSame($protocol, $response->protocolVersion());
+            });
+    }
+
+    public function testMatchRoutes()
+    {
+        $this
+            ->forAll(
+                Set\Elements::of(...ProtocolVersion::cases()),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($protocol, $variables) {
+                $responseA = $this->createMock(Response::class);
+                $responseB = $this->createMock(Response::class);
+
+                $app = Application::http(Factory::build(), new Environment(Map::of(...$variables)))
+                    ->appendRoutes(fn($routes) => $routes->add(
+                        Route::of(Method::get, Template::of('/foo'))->handle(function($request) use ($protocol, $responseA) {
+                            $this->assertSame($protocol, $request->protocolVersion());
+
+                            return $responseA;
+                        }),
+                    ))
+                    ->appendRoutes(fn($routes) => $routes->add(
+                        Route::of(Method::get, Template::of('/bar'))->handle(function($request) use ($protocol, $responseB) {
+                            $this->assertSame($protocol, $request->protocolVersion());
+
+                            return $responseB;
+                        }),
+                    ));
+
+                $response = $app->run(new ServerRequest(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($responseA, $response);
+
+                $response = $app->run(new ServerRequest(
+                    Url::of('/bar'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($responseB, $response);
             });
     }
 }

@@ -22,7 +22,9 @@
         "innmind/di": "^2.0",
         "ramsey/uuid": "^4.7",
         "innmind/url": "^4.1",
-        "innmind/filesystem": "^6.0"
+        "innmind/filesystem": "^6.0",
+        "innmind/http-server": "^3.0",
+        "innmind/router": "^3.0"
     },
     "autoload": {
         "psr-4": {
