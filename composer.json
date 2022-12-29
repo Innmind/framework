@@ -19,7 +19,7 @@
         "innmind/operating-system": "^3.2",
         "innmind/cli": "^3.1",
         "innmind/immutable": "^4.9",
-        "innmind/di": "^1.1",
+        "innmind/di": "^2.0",
         "ramsey/uuid": "^4.7",
         "innmind/url": "^4.1",
         "innmind/filesystem": "^6.0"

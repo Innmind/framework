@@ -14,8 +14,8 @@ use Innmind\CLI\{
 };
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\{
+    Builder,
     Container,
-    ServiceLocator,
 };
 use Innmind\Immutable\{
     Sequence,
@@ -27,17 +27,17 @@ final class Cli
 {
     private OperatingSystem $os;
     private Environment $env;
-    /** @var callable(OperatingSystem, Environment): Container */
+    /** @var callable(OperatingSystem, Environment): Builder */
     private $container;
     /** @var Sequence<string> */
     private Sequence $commands;
-    /** @var callable(Command, ServiceLocator, OperatingSystem, Environment): Command */
+    /** @var callable(Command, Container, OperatingSystem, Environment): Command */
     private $mapCommand;
 
     /**
-     * @param callable(OperatingSystem, Environment): Container $container
+     * @param callable(OperatingSystem, Environment): Builder $container
      * @param Sequence<string> $commands
-     * @param callable(Command, ServiceLocator, OperatingSystem, Environment): Command $mapCommand
+     * @param callable(Command, Container, OperatingSystem, Environment): Command $mapCommand
      */
     private function __construct(
         OperatingSystem $os,
@@ -58,7 +58,7 @@ final class Cli
         return new self(
             $os,
             $env,
-            static fn() => new Container,
+            static fn() => Builder::new(),
             Sequence::strings(),
             static fn(Command $command) => $command,
         );
@@ -94,7 +94,7 @@ final class Cli
 
     /**
      * @param non-empty-string $name
-     * @param callable(ServiceLocator, OperatingSystem, Environment): object $definition
+     * @param callable(Container, OperatingSystem, Environment): object $definition
      */
     public function service(string $name, callable $definition): self
     {
@@ -111,7 +111,7 @@ final class Cli
     }
 
     /**
-     * @param callable(ServiceLocator, OperatingSystem, Environment): Command $command
+     * @param callable(Container, OperatingSystem, Environment): Command $command
      */
     public function command(callable $command): self
     {
@@ -128,7 +128,7 @@ final class Cli
     }
 
     /**
-     * @param callable(Command, ServiceLocator, OperatingSystem, Environment): Command $map
+     * @param callable(Command, Container, OperatingSystem, Environment): Command $map
      */
     public function mapCommand(callable $map): self
     {
@@ -139,7 +139,7 @@ final class Cli
             $this->commands,
             fn(
                 Command $command,
-                ServiceLocator $service,
+                Container $service,
                 OperatingSystem $os,
                 Environment $env,
             ) => $map(
@@ -153,7 +153,7 @@ final class Cli
 
     public function run(CliEnv $env): CliEnv
     {
-        $container = ($this->container)($this->os, $this->env);
+        $container = ($this->container)($this->os, $this->env)->build();
         $mapCommand = fn(Command $command): Command => ($this->mapCommand)(
             $command,
             $container,

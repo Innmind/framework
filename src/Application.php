@@ -8,7 +8,7 @@ use Innmind\CLI\{
     Environment as CliEnv,
     Command,
 };
-use Innmind\DI\ServiceLocator;
+use Innmind\DI\Container;
 use Innmind\Immutable\Map;
 
 final class Application
@@ -51,7 +51,7 @@ final class Application
 
     /**
      * @param non-empty-string $name
-     * @param callable(ServiceLocator, OperatingSystem, Environment): object $definition
+     * @param callable(Container, OperatingSystem, Environment): object $definition
      */
     public function service(string $name, callable $definition): self
     {
@@ -59,7 +59,7 @@ final class Application
     }
 
     /**
-     * @param callable(ServiceLocator, OperatingSystem, Environment): Command $command
+     * @param callable(Container, OperatingSystem, Environment): Command $command
      */
     public function command(callable $command): self
     {
@@ -67,7 +67,7 @@ final class Application
     }
 
     /**
-     * @param callable(Command, ServiceLocator, OperatingSystem, Environment): Command $map
+     * @param callable(Command, Container, OperatingSystem, Environment): Command $map
      */
     public function mapCommand(callable $map): self
     {

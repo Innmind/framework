@@ -7,7 +7,7 @@ use Innmind\CLI\{
     Command,
     Console,
 };
-use Innmind\DI\ServiceLocator;
+use Innmind\DI\Container;
 
 /**
  * @internal
@@ -15,7 +15,7 @@ use Innmind\DI\ServiceLocator;
 final class Defer implements Command
 {
     private string $service;
-    private ServiceLocator $locate;
+    private Container $locate;
     /** @var callable(Command): Command */
     private $map;
     private ?Command $command = null;
@@ -25,7 +25,7 @@ final class Defer implements Command
      */
     public function __construct(
         string $service,
-        ServiceLocator $locate,
+        Container $locate,
         callable $map,
     ) {
         $this->service = $service;
