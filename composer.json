@@ -20,7 +20,8 @@
         "innmind/cli": "^3.0",
         "innmind/immutable": "^4.9",
         "innmind/di": "^1.1",
-        "ramsey/uuid": "^4.7"
+        "ramsey/uuid": "^4.7",
+        "innmind/url": "^4.1"
     },
     "autoload": {
         "psr-4": {

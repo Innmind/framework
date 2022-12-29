@@ -7,6 +7,7 @@ use Innmind\Framework\{
     Application,
     Middleware,
     Middleware\Optional,
+    Middleware\LoadDotEnv,
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
@@ -14,6 +15,7 @@ use Innmind\CLI\{
     Command,
     Console,
 };
+use Innmind\Url\Path;
 use Innmind\Immutable\{
     Map,
     Str,
@@ -723,6 +725,59 @@ class ApplicationTest extends TestCase
                 ));
 
                 $this->assertSame(['bar'], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+            });
+    }
+
+    public function testLoadDotEnv()
+    {
+        $this
+            ->forAll(
+                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Elements::of(true, false),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($inputs, $interactive, $variables) {
+                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                    ->map(LoadDotEnv::at(Path::of(__DIR__.'/../fixtures/')))
+                    ->command(static fn($_, $__, $env) => new class($env) implements Command {
+                        public function __construct(
+                            private $env,
+                        ) {
+                        }
+
+                        public function __invoke(Console $console): Console
+                        {
+                            return $console
+                                ->output(Str::of($this->env->get('FOO')))
+                                ->output(Str::of($this->env->get('PASSWORD')));
+                        }
+
+                        public function usage(): string
+                        {
+                            return 'watev';
+                        }
+                    });
+
+                $env = $app->runCli(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name'],
+                    $variables,
+                    '/',
+                ));
+
+                $this->assertSame(['bar', 'foo=" \n watev; bar!'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
