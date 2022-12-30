@@ -25,7 +25,7 @@ By default this application will write `Hello world` when you call `php entrypoi
 
 ## Handle commands
 
-This example reuses the AMQP clients defined in the [services topic](services.php).
+This example reuses the AMQP clients defined in the [services topic](services.md).
 
 ```php
 use Innmind\Framework\{
