@@ -6,6 +6,7 @@ namespace Tests\Innmind\Framework;
 use Innmind\Framework\{
     Application,
     Middleware,
+    Environment,
     Middleware\Optional,
     Middleware\LoadDotEnv,
     Http\RequestHandler,
@@ -21,7 +22,6 @@ use Innmind\Http\{
     Message\ServerRequest as ServerRequestInterface,
     Message\ServerRequest\ServerRequest,
     Message\Response,
-    Message\Environment,
     Message\Method,
     Message\StatusCode,
     ProtocolVersion,
@@ -64,7 +64,7 @@ class ApplicationTest extends TestCase
                 ),
             )
             ->then(function($inputs, $interactive, $arguments, $variables) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables));
+                $app = Application::cli(Factory::build(), $env = Environment::test($variables));
 
                 $env = $app->run(InMemory::of(
                     $inputs,
@@ -100,7 +100,7 @@ class ApplicationTest extends TestCase
             )
             ->then(function($inputs, $interactive, $arguments, $variables) {
                 $os = Factory::build();
-                $app = Application::cli($os, Map::of(...$variables))
+                $app = Application::cli($os, Environment::test($variables))
                     ->mapEnvironment(static fn($env) => $env->with('foo', 'bar'))
                     ->mapOperatingSystem(function($in, $env) use ($os) {
                         $this->assertSame($os, $in);
@@ -123,7 +123,7 @@ class ApplicationTest extends TestCase
                 ));
 
                 $otherOs = Factory::build();
-                $app = Application::cli($os, Map::of(...$variables))
+                $app = Application::cli($os, Environment::test($variables))
                     ->mapOperatingSystem(function($in, $env) use ($os, $otherOs) {
                         $this->assertSame($os, $in);
 
@@ -166,7 +166,7 @@ class ApplicationTest extends TestCase
                 ),
             )
             ->then(function($inputs, $interactive, $variables) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
                         public function __invoke(Console $console): Console
                         {
@@ -211,7 +211,7 @@ class ApplicationTest extends TestCase
                 ),
             )
             ->then(function($inputs, $interactive, $variables) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
                         public function __invoke(Console $console): Console
                         {
@@ -283,7 +283,7 @@ class ApplicationTest extends TestCase
                 Set\Strings::atLeast(1),
             )
             ->then(function($inputs, $interactive, $arguments, $variables, $service) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->service($service, static fn() => throw new \Exception);
 
                 $env = $app->run(InMemory::of(
@@ -319,7 +319,7 @@ class ApplicationTest extends TestCase
                 Set\Strings::atLeast(1),
             )
             ->then(function($inputs, $interactive, $variables, $service) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn($get) => new class($get($service)) implements Command {
                         public function __construct(
                             private Str $output,
@@ -372,7 +372,7 @@ class ApplicationTest extends TestCase
                 Set\Strings::atLeast(1),
             )
             ->then(function($inputs, $interactive, $variables, $serviceA, $serviceB) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn($get) => new class($get($serviceA)) implements Command {
                         public function __construct(
                             private Str $output,
@@ -424,7 +424,7 @@ class ApplicationTest extends TestCase
                 ),
             )
             ->then(function($inputs, $interactive, $variables) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
                         public function __invoke(Console $console): Console
                         {
@@ -485,7 +485,7 @@ class ApplicationTest extends TestCase
                 ),
             )
             ->then(function($inputs, $interactive, $variables) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
                         public function __invoke(Console $console): Console
                         {
@@ -548,7 +548,7 @@ class ApplicationTest extends TestCase
             ->then(function($inputs, $interactive, $variables) {
                 static $testRuns = 0;
                 ++$testRuns;
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
                         public function __invoke(Console $console): Console
                         {
@@ -623,7 +623,7 @@ class ApplicationTest extends TestCase
                 ),
             )
             ->then(function($inputs, $interactive, $variables) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->map(new class implements Middleware {
                         public function __invoke(Application $app): Application
                         {
@@ -713,7 +713,7 @@ class ApplicationTest extends TestCase
                     }
                 };
 
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->map(Optional::of(Unknown::class, static fn() => throw new \Exception))
                     ->map(Optional::of($middleware::class, static fn() => $middleware))
                     ->command(static fn($_, $__, $env) => new class($env) implements Command {
@@ -765,7 +765,7 @@ class ApplicationTest extends TestCase
                 ),
             )
             ->then(function($inputs, $interactive, $variables) {
-                $app = Application::cli(Factory::build(), Map::of(...$variables))
+                $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->map(LoadDotEnv::at(Path::of(__DIR__.'/../fixtures/')))
                     ->command(static fn($_, $__, $env) => new class($env) implements Command {
                         public function __construct(
@@ -819,7 +819,7 @@ class ApplicationTest extends TestCase
                 ),
             )
             ->then(function($url, $method, $protocol, $variables) {
-                $app = Application::http(Factory::build(), new Environment(Map::of(...$variables)));
+                $app = Application::http(Factory::build(), Environment::test($variables));
 
                 $response = $app->run(new ServerRequest(
                     $url,
@@ -850,7 +850,7 @@ class ApplicationTest extends TestCase
                 $responseA = $this->createMock(Response::class);
                 $responseB = $this->createMock(Response::class);
 
-                $app = Application::http(Factory::build(), new Environment(Map::of(...$variables)))
+                $app = Application::http(Factory::build(), Environment::test($variables))
                     ->appendRoutes(fn($routes) => $routes->add(
                         Route::of(Method::get, Template::of('/foo'))->handle(function($request) use ($protocol, $responseA) {
                             $this->assertSame($protocol, $request->protocolVersion());
@@ -901,7 +901,7 @@ class ApplicationTest extends TestCase
                 ),
             )
             ->then(function($url, $method, $protocol, $variables) {
-                $app = Application::http(Factory::build(), new Environment(Map::of(...$variables)))
+                $app = Application::http(Factory::build(), Environment::test($variables))
                     ->mapRequestHandler(static fn($inner) => new class($inner) implements RequestHandler {
                         public function __construct(
                             private $inner,
@@ -957,7 +957,7 @@ class ApplicationTest extends TestCase
             ->then(function($url, $method, $protocol, $variables) {
                 $expected = $this->createMock(Response::class);
 
-                $app = Application::http(Factory::build(), new Environment(Map::of(...$variables)))
+                $app = Application::http(Factory::build(), Environment::test($variables))
                     ->notFoundRequestHandler(function($request) use ($protocol, $expected) {
                         $this->assertSame($protocol, $request->protocolVersion());
 

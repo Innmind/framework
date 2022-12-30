@@ -16,9 +16,7 @@ use Innmind\DI\Container;
 use Innmind\Http\Message\{
     ServerRequest,
     Response,
-    Environment as HttpEnvironment,
 };
-use Innmind\Immutable\Map;
 
 final class Application
 {
@@ -35,19 +33,17 @@ final class Application
     /**
      * @psalm-pure
      */
-    public static function http(OperatingSystem $os, HttpEnvironment $env): self
+    public static function http(OperatingSystem $os, Environment $env): self
     {
-        return new self(Application\Http::of($os, Environment::http($env)));
+        return new self(Application\Http::of($os, $env));
     }
 
     /**
      * @psalm-pure
-     *
-     * @param Map<string, string> $env
      */
-    public static function cli(OperatingSystem $os, Map $env): self
+    public static function cli(OperatingSystem $os, Environment $env): self
     {
-        return new self(Application\Cli::of($os, Environment::of($env)));
+        return new self(Application\Cli::of($os, $env));
     }
 
     /**

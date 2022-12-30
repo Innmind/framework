@@ -3,7 +3,10 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework\Main;
 
-use Innmind\Framework\Application;
+use Innmind\Framework\{
+    Application,
+    Environment as AppEnv,
+};
 use Innmind\HttpServer\Main;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Http\Message\{
@@ -18,7 +21,7 @@ abstract class Http extends Main
 
     protected function preload(OperatingSystem $os, Environment $env): void
     {
-        $this->app = static::configure(Application::http($os, $env));
+        $this->app = static::configure(Application::http($os, AppEnv::http($env)));
     }
 
     protected function main(ServerRequest $request): Response

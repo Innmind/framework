@@ -38,6 +38,16 @@ final class Environment
 
     /**
      * @psalm-pure
+     *
+     * @param list<array{string, string}> $variables
+     */
+    public static function test(array $variables): self
+    {
+        return self::of(Map::of(...$variables));
+    }
+
+    /**
+     * @psalm-pure
      */
     public static function http(HttpEnvironment $env): self
     {
