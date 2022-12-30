@@ -34,6 +34,8 @@ final class Http
     private Maybe $notFound;
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(OperatingSystem, Environment): Builder $container
      * @param callable(Routes, Container, OperatingSystem, Environment): Routes $routes
      * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
@@ -55,6 +57,9 @@ final class Http
         $this->notFound = $notFound;
     }
 
+    /**
+     * @psalm-pure
+     */
     public static function of(OperatingSystem $os, Environment $env): self
     {
         /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> */
@@ -71,10 +76,13 @@ final class Http
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(Environment, OperatingSystem): Environment $map
      */
     public function mapEnvironment(callable $map): self
     {
+        /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
         return new self(
             $this->os,
             $map($this->env, $this->os),
@@ -86,10 +94,13 @@ final class Http
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(OperatingSystem, Environment): OperatingSystem $map
      */
     public function mapOperatingSystem(callable $map): self
     {
+        /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
         return new self(
             $map($this->os, $this->env),
             $this->env,
@@ -101,6 +112,8 @@ final class Http
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param non-empty-string $name
      * @param callable(Container, OperatingSystem, Environment): object $definition
      */
@@ -120,6 +133,8 @@ final class Http
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
      */
     public function appendRoutes(callable $append): self
@@ -145,6 +160,8 @@ final class Http
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
      */
     public function mapRequestHandler(callable $map): self
@@ -170,6 +187,8 @@ final class Http
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
      */
     public function notFoundRequestHandler(callable $handle): self

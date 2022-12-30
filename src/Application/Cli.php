@@ -35,6 +35,8 @@ final class Cli
     private $mapCommand;
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(OperatingSystem, Environment): Builder $container
      * @param Sequence<string> $commands
      * @param callable(Command, Container, OperatingSystem, Environment): Command $mapCommand
@@ -53,6 +55,9 @@ final class Cli
         $this->mapCommand = $mapCommand;
     }
 
+    /**
+     * @psalm-pure
+     */
     public static function of(OperatingSystem $os, Environment $env): self
     {
         return new self(
@@ -65,10 +70,13 @@ final class Cli
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(Environment, OperatingSystem): Environment $map
      */
     public function mapEnvironment(callable $map): self
     {
+        /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
         return new self(
             $this->os,
             $map($this->env, $this->os),
@@ -79,10 +87,13 @@ final class Cli
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(OperatingSystem, Environment): OperatingSystem $map
      */
     public function mapOperatingSystem(callable $map): self
     {
+        /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
         return new self(
             $map($this->os, $this->env),
             $this->env,
@@ -93,6 +104,8 @@ final class Cli
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param non-empty-string $name
      * @param callable(Container, OperatingSystem, Environment): object $definition
      */
@@ -111,10 +124,13 @@ final class Cli
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(Container, OperatingSystem, Environment): Command $command
      */
     public function command(callable $command): self
     {
+        /** @psalm-suppress ImpureMethodCall Mutation free to force the user to use the returned object */
         $reference = Uuid::uuid4()->toString();
         $self = $this->service($reference, $command);
 
@@ -128,6 +144,8 @@ final class Cli
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(Command, Container, OperatingSystem, Environment): Command $map
      */
     public function mapCommand(callable $map): self

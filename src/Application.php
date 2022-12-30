@@ -24,17 +24,25 @@ final class Application
 {
     private Application\Cli|Application\Http $app;
 
+    /**
+     * @psalm-mutation-free
+     */
     private function __construct(Application\Cli|Application\Http $app)
     {
         $this->app = $app;
     }
 
+    /**
+     * @psalm-pure
+     */
     public static function http(OperatingSystem $os, HttpEnvironment $env): self
     {
         return new self(Application\Http::of($os, Environment::http($env)));
     }
 
     /**
+     * @psalm-pure
+     *
      * @param Map<string, string> $env
      */
     public static function cli(OperatingSystem $os, Map $env): self
@@ -43,6 +51,8 @@ final class Application
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(Environment, OperatingSystem): Environment $map
      */
     public function mapEnvironment(callable $map): self
@@ -51,6 +61,8 @@ final class Application
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(OperatingSystem, Environment): OperatingSystem $map
      */
     public function mapOperatingSystem(callable $map): self
@@ -58,12 +70,18 @@ final class Application
         return new self($this->app->mapOperatingSystem($map));
     }
 
+    /**
+     * @psalm-mutation-free
+     */
     public function map(Middleware $map): self
     {
+        /** @psalm-suppress ImpureMethodCall Mutation free to force the user to use the returned object */
         return $map($this);
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param non-empty-string $name
      * @param callable(Container, OperatingSystem, Environment): object $definition
      */
@@ -73,6 +91,8 @@ final class Application
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(Container, OperatingSystem, Environment): Command $command
      */
     public function command(callable $command): self
@@ -85,6 +105,8 @@ final class Application
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(Command, Container, OperatingSystem, Environment): Command $map
      */
     public function mapCommand(callable $map): self
@@ -97,6 +119,8 @@ final class Application
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
      */
     public function appendRoutes(callable $append): self
@@ -109,6 +133,8 @@ final class Application
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
      */
     public function mapRequestHandler(callable $map): self
@@ -121,6 +147,8 @@ final class Application
     }
 
     /**
+     * @psalm-mutation-free
+     *
      * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
      */
     public function notFoundRequestHandler(callable $handle): self
