@@ -132,6 +132,9 @@ final class Application
         return $this;
     }
 
+    /**
+     * @internal
+     */
     public function run(CliEnv|ServerRequest $input): CliEnv|Response
     {
         /** @psalm-suppress PossiblyInvalidArgument Let the app crash in case of a misuse */
