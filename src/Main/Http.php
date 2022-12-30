@@ -18,7 +18,7 @@ abstract class Http extends Main
 
     protected function preload(OperatingSystem $os, Environment $env): void
     {
-        $this->app = self::configure(Application::http($os, $env));
+        $this->app = static::configure(Application::http($os, $env));
     }
 
     protected function main(ServerRequest $request): Response
