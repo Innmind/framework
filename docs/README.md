@@ -11,3 +11,5 @@ These topics will guide you through the simplest cases to more complex ones:
 - [Middlewares](middlewares.md)
 - [Build an app that runs through HTTP and CLI](http-and-cli.md)
 - [Testing](testing.md)
+- [Add variables to the environment](environment.md)
+- [Decorate the operating system](operating-system.md)
