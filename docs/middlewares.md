@@ -79,3 +79,33 @@ new class extends Cli {
 ```
 
 This example defines 2 services and a command and let the end users choose the name of the email client service so they can reuse it in their applications.
+
+## Optional middleware
+
+In some cases, like in development, you'll have a middleware that is not always existing. The framework deals with this case via composition with the `Optional` middleware.
+
+```php
+use Innmind\Framework\{
+    Main\Cli,
+    Application,
+    Middleware\Optional,
+};
+
+new class extends Cli {
+    protected function configure(Application $app): Application
+    {
+        return $app->map(Optional::of(MyMiddleware::class));
+    }
+};
+```
+
+If the `MyMiddleware` class doesn't exist it will do nothing and if it exists it will instanciate it and call it.
+
+If the middleware constructor is private or you want to specify arguments you can pass a factory as a second argument like this:
+
+```php
+Optional::of(
+    MyMiddleware::class,
+    static fn() => new MyMiddleware('some argument'),
+);
+```
