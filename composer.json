@@ -47,5 +47,8 @@
     },
     "suggest": {
         "innmind/black-box": "For property based testing"
+    },
+    "provide": {
+        "innmind/framework-middlewares": "1.0"
     }
 }
