@@ -26,6 +26,8 @@ jobs:
           dependency-versions: ${{ matrix.dependencies }}
       - name: PHPUnit
         run: vendor/bin/phpunit --coverage-clover=coverage.clover
+        env:
+          CI: 'true'
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
