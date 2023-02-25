@@ -17,15 +17,18 @@ use Innmind\Http\Message\{
     ServerRequest,
     Response,
 };
+use Innmind\Url\Authority\Port;
+use Innmind\IP\IP;
+use Innmind\Socket\Internet\Transport;
 
 final class Application
 {
-    private Application\Cli|Application\Http $app;
+    private Application\Cli|Application\Http|Application\Async\Http $app;
 
     /**
      * @psalm-mutation-free
      */
-    private function __construct(Application\Cli|Application\Http $app)
+    private function __construct(Application\Cli|Application\Http|Application\Async\Http $app)
     {
         $this->app = $app;
     }
@@ -44,6 +47,15 @@ final class Application
     public static function cli(OperatingSystem $os, Environment $env): self
     {
         return new self(Application\Cli::of($os, $env));
+    }
+
+    /**
+     * @psalm-pure
+     * @experimental
+     */
+    public static function asyncHttp(OperatingSystem $os): self
+    {
+        return new self(Application\Async\Http::of($os));
     }
 
     /**
@@ -121,7 +133,10 @@ final class Application
      */
     public function appendRoutes(callable $append): self
     {
-        if ($this->app instanceof Application\Http) {
+        if (
+            $this->app instanceof Application\Http ||
+            $this->app instanceof Application\Async\Http
+        ) {
             return new self($this->app->appendRoutes($append));
         }
 
@@ -135,7 +150,10 @@ final class Application
      */
     public function mapRequestHandler(callable $map): self
     {
-        if ($this->app instanceof Application\Http) {
+        if (
+            $this->app instanceof Application\Http ||
+            $this->app instanceof Application\Async\Http
+        ) {
             return new self($this->app->mapRequestHandler($map));
         }
 
@@ -149,8 +167,24 @@ final class Application
      */
     public function notFoundRequestHandler(callable $handle): self
     {
-        if ($this->app instanceof Application\Http) {
+        if (
+            $this->app instanceof Application\Http ||
+            $this->app instanceof Application\Async\Http
+        ) {
             return new self($this->app->notFoundRequestHandler($handle));
+        }
+
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
+     * @experimental
+     */
+    public function open(Port $port, IP $ip = null, Transport $transport = null): self
+    {
+        if ($this->app instanceof Application\Async\Http) {
+            return new self($this->app->open($port, $ip, $transport));
         }
 
         return $this;
