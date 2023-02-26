@@ -4,7 +4,7 @@
 
 ### Added
 
-- `Innmind\Framework\Main\Async\Http` as an experimental feature
+- `Innmind\Framework\Main\Async\Http` as an (optional) experimental feature
 
 ## 1.0.0 - 2023-01-01
 
