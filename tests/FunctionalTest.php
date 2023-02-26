@@ -27,11 +27,6 @@ class FunctionalTest extends TestCase
 
     public function setUp(): void
     {
-        if (\getenv('CI')) {
-            // disabled because GitHub CI hangs when trying to open a port
-            $this->markTestSkipped();
-        }
-
         $this->os = Factory::build();
         $this->server = $this
             ->os

@@ -26,8 +26,6 @@ jobs:
           dependency-versions: ${{ matrix.dependencies }}
       - name: PHPUnit
         run: vendor/bin/phpunit
-        env:
-          CI: 'true'
   coverage:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -52,7 +50,6 @@ jobs:
       - name: PHPUnit
         run: vendor/bin/phpunit --coverage-clover=coverage.clover
         env:
-          CI: 'true'
           BLACK_BOX_SET: 1
       - uses: codecov/codecov-action@v1
         with:
