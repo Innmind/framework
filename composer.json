@@ -44,7 +44,8 @@
         "innmind/async-http-server": "~1.0"
     },
     "conflict": {
-        "innmind/black-box": "<4.7|~5.0"
+        "innmind/black-box": "<4.7|~5.0",
+        "innmind/async-http-server": "<1.0|~2.0"
     },
     "suggest": {
         "innmind/black-box": "For property based testing",
