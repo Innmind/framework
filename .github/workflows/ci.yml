@@ -50,7 +50,7 @@ jobs:
       - name: PHPUnit
         run: vendor/bin/phpunit --coverage-clover=coverage.clover
         env:
-          BLACK_BOX_SET: 1
+          BLACKBOX_SET_SIZE: 1
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
