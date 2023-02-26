@@ -1,0 +1,4 @@
+ignore:
+  - src/Application/Async/Http.php
+  - src/Main/Async/Http.php
+  - .php-cs-fixer.dist.php

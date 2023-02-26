@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0 - 2023-02-26
+
+### Added
+
+- `Innmind\Framework\Main\Async\Http` as an (optional) experimental feature
+
 ## 1.0.0 - 2023-01-01
 
 ### Added
