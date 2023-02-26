@@ -9,19 +9,15 @@ use Innmind\Framework\{
     Http\Router,
     Http\RequestHandler,
 };
-use Innmind\CLI\Environment as CliEnv;
+use Innmind\CLI\{
+    Environment as CliEnv,
+    Commands,
+};
 use Innmind\OperatingSystem\{
     OperatingSystem,
     OperatingSystem\Unix,
 };
-use Innmind\Async\HttpServer\{
-    Server,
-    InjectEnvironment,
-    Open,
-};
-use Innmind\TimeContinuum\{
-    Earth\ElapsedPeriod,
-};
+use Innmind\Async\HttpServer\Command\Serve;
 use Innmind\DI\{
     Container,
     Builder,
@@ -29,25 +25,8 @@ use Innmind\DI\{
 use Innmind\Http\Message\{
     ServerRequest,
     Response,
-    Environment as HttpEnv,
 };
-use Innmind\Url\Authority\Port;
-use Innmind\IP\IP;
-use Innmind\Socket\{
-    Server as SocketServer,
-    Internet\Transport,
-};
-use Innmind\Stream\Streams;
-use Innmind\Mantle\{
-    Forerunner,
-    Source,
-    Suspend\TimeFrame,
-};
-use Innmind\Immutable\{
-    Sequence,
-    Str,
-    Maybe,
-};
+use Innmind\Immutable\Maybe;
 
 /**
  * @experimental
@@ -55,8 +34,6 @@ use Innmind\Immutable\{
 final class Http
 {
     private OperatingSystem $os;
-    /** @var Maybe<Open> */
-    private Maybe $open;
     /** @var callable(OperatingSystem, Environment): array{OperatingSystem, Environment} */
     private $map;
     /** @var callable(OperatingSystem, Environment): Builder */
@@ -71,7 +48,6 @@ final class Http
     /**
      * @psalm-mutation-free
      *
-     * @param Maybe<Open> $open
      * @param callable(OperatingSystem, Environment): array{OperatingSystem, Environment} $map
      * @param callable(OperatingSystem, Environment): Builder $container
      * @param callable(Routes, Container, OperatingSystem, Environment): Routes $routes
@@ -80,7 +56,6 @@ final class Http
      */
     private function __construct(
         OperatingSystem $os,
-        Maybe $open,
         callable $map,
         callable $container,
         callable $routes,
@@ -88,7 +63,6 @@ final class Http
         Maybe $notFound,
     ) {
         $this->os = $os;
-        $this->open = $open;
         $this->map = $map;
         $this->container = $container;
         $this->routes = $routes;
@@ -101,42 +75,16 @@ final class Http
      */
     public static function of(OperatingSystem $os): self
     {
-        /** @var Maybe<Open> */
-        $open = Maybe::nothing();
         /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> */
         $notFound = Maybe::nothing();
 
         return new self(
             $os,
-            $open,
             static fn(OperatingSystem $os, Environment $env) => [$os, $env],
             static fn() => Builder::new(),
             static fn(Routes $routes) => $routes,
             static fn(RequestHandler $handler) => $handler,
             $notFound,
-        );
-    }
-
-    /**
-     * @psalm-mutation-free
-     */
-    public function open(Port $port, IP $ip = null, Transport $transport = null): self
-    {
-        return new self(
-            $this->os,
-            $this
-                ->open
-                ->map(static fn($open) => $open->and($port, $ip, $transport))
-                ->otherwise(static fn() => Maybe::just(Open::of(
-                    $port,
-                    $ip,
-                    $transport,
-                ))),
-            $this->map,
-            $this->container,
-            $this->routes,
-            $this->mapRequestHandler,
-            $this->notFound,
         );
     }
 
@@ -149,7 +97,6 @@ final class Http
     {
         return new self(
             $this->os,
-            $this->open,
             function(OperatingSystem $os, Environment $env) use ($map): array {
                 [$os, $env] = ($this->map)($os, $env);
                 $env = $map($env, $os);
@@ -172,7 +119,6 @@ final class Http
     {
         return new self(
             $this->os,
-            $this->open,
             function(OperatingSystem $os, Environment $env) use ($map): array {
                 [$os, $env] = ($this->map)($os, $env);
                 $os = $map($os, $env);
@@ -196,7 +142,6 @@ final class Http
     {
         return new self(
             $this->os,
-            $this->open,
             $this->map,
             fn(OperatingSystem $os, Environment $env) => ($this->container)($os, $env)->add(
                 $name,
@@ -217,7 +162,6 @@ final class Http
     {
         return new self(
             $this->os,
-            $this->open,
             $this->map,
             $this->container,
             fn(
@@ -245,7 +189,6 @@ final class Http
     {
         return new self(
             $this->os,
-            $this->open,
             $this->map,
             $this->container,
             $this->routes,
@@ -273,7 +216,6 @@ final class Http
     {
         return new self(
             $this->os,
-            $this->open,
             $this->map,
             $this->container,
             $this->routes,
@@ -284,33 +226,8 @@ final class Http
 
     public function run(CliEnv $env): CliEnv
     {
-        $open = $this->open->match(
-            static fn($open) => $open,
-            static fn() => Open::of(Port::of(8080)),
-        );
-
-        return $open($this->os)->match(
-            fn($servers) => $this->serve($env, $servers),
-            static fn() => $env
-                ->error(Str::of("Failed to open sockets\n"))
-                ->exit(1),
-        );
-    }
-
-    /**
-     * @param Sequence<SocketServer> $servers
-     */
-    private function serve(CliEnv $env, Sequence $servers): CliEnv
-    {
-        $source = new Server(
+        $run = Commands::of(Serve::of(
             $this->os,
-            match ($this->os instanceof Unix) {
-                true => $this->os->config()->streamCapabilities(),
-                false => Streams::fromAmbientAuthority(),
-            },
-            $servers,
-            ElapsedPeriod::of(1_000),
-            InjectEnvironment::of(new HttpEnv($env->variables())),
             function(ServerRequest $request, OperatingSystem $os): Response {
                 $env = Environment::http($request->environment());
                 [$os, $env] = ($this->map)($os, $env);
@@ -336,12 +253,8 @@ final class Http
 
                 return $handle($request);
             },
-        );
-        $forerunner = Forerunner::of(
-            $this->os->clock(),
-            TimeFrame::of($this->os->clock(), ElapsedPeriod::of(100)),
-        );
+        ));
 
-        return $forerunner($env, $source);
+        return $run($env);
     }
 }

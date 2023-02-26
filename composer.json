@@ -41,7 +41,7 @@
         "vimeo/psalm": "~5.6",
         "innmind/black-box": "^4.17",
         "innmind/coding-standard": "~2.0",
-        "innmind/async-http-server": "dev-develop"
+        "innmind/async-http-server": "~1.0"
     },
     "conflict": {
         "innmind/black-box": "<4.7|~5.0"

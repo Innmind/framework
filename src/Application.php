@@ -17,9 +17,6 @@ use Innmind\Http\Message\{
     ServerRequest,
     Response,
 };
-use Innmind\Url\Authority\Port;
-use Innmind\IP\IP;
-use Innmind\Socket\Internet\Transport;
 
 final class Application
 {
@@ -172,19 +169,6 @@ final class Application
             $this->app instanceof Application\Async\Http
         ) {
             return new self($this->app->notFoundRequestHandler($handle));
-        }
-
-        return $this;
-    }
-
-    /**
-     * @psalm-mutation-free
-     * @experimental
-     */
-    public function open(Port $port, IP $ip = null, Transport $transport = null): self
-    {
-        if ($this->app instanceof Application\Async\Http) {
-            return new self($this->app->open($port, $ip, $transport));
         }
 
         return $this;
