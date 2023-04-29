@@ -82,4 +82,12 @@ final class Environment
     {
         return $this->variables->get($key);
     }
+
+    /**
+     * @return Map<string, string>
+     */
+    public function all(): Map
+    {
+        return $this->variables;
+    }
 }
