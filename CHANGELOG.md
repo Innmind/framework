@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 - 2023-04-29
+
+### Added
+
+- `Innmind\Framework\Environment::all()`
+
 ## 1.1.0 - 2023-02-26
 
 ### Added
