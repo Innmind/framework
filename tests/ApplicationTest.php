@@ -884,6 +884,54 @@ class ApplicationTest extends TestCase
             });
     }
 
+    public function testRouteShortDeclaration()
+    {
+        $this
+            ->forAll(
+                Set\Elements::of(...ProtocolVersion::cases()),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($protocol, $variables) {
+                $responseA = $this->createMock(Response::class);
+                $responseB = $this->createMock(Response::class);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->route('GET /foo', function($request) use ($protocol, $responseA) {
+                        $this->assertSame($protocol, $request->protocolVersion());
+
+                        return $responseA;
+                    })
+                    ->route('GET /bar', function($request) use ($protocol, $responseB) {
+                        $this->assertSame($protocol, $request->protocolVersion());
+
+                        return $responseB;
+                    });
+
+                $response = $app->run(new ServerRequest(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($responseA, $response);
+
+                $response = $app->run(new ServerRequest(
+                    Url::of('/bar'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($responseB, $response);
+            });
+    }
+
     public function testMapRequestHandler()
     {
         $this

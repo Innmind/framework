@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `Innmind\Framework\Application::route()`
+
 ## 1.2.0 - 2023-04-29
 
 ### Added

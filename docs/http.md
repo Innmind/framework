@@ -94,6 +94,43 @@ new class extends Http {
 
 For simple apps having the whole behaviour next to the route can be ok. But like in this case it can be repetitive, for such case we can specify our behaviours elsewhere: [services](#Services).
 
+## Short syntax
+
+The previous shows the default way to declare routes, but for very simple apps it can be a bit verbose. The framework provides a shorter syntax to handle routes:
+
+```php
+use Innmind\Framework\{
+    Main\Http,
+    Application,
+};
+use Innmind\Router\Route\Variables;
+use Innmind\Http\Message\{
+    ServerRequest,
+    Response\Response,
+    StatusCode,
+};
+use Innmind\Filesystem\File\Content;
+
+new class extends Http {
+    protected function configure(Application $app): Application
+    {
+        return $app
+            ->route('GET /', static fn(ServerRequest $request) => new Response(
+                StatusCode::ok,
+                $request->protocolVersion(),
+                null,
+                Content\Lines::ofContent('Hello world!'),
+            ))
+            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => new Response(
+                StatusCode::ok,
+                $request->protocolVersion(),
+                null,
+                Content\Lines::ofContent("Hello {$variables->get('name')}!"),
+            ));
+    }
+};
+```
+
 ## Services
 
 Services are any object that are referenced by a string in a [`Container`](https://github.com/Innmind/DI). For example let's take the route handler from the previous section and move them inside services.
