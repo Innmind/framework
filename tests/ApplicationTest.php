@@ -10,6 +10,7 @@ use Innmind\Framework\{
     Middleware\Optional,
     Middleware\LoadDotEnv,
     Http\RequestHandler,
+    Http\To,
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
@@ -929,6 +930,46 @@ class ApplicationTest extends TestCase
                 ));
 
                 $this->assertSame($responseB, $response);
+            });
+    }
+
+    public function testRouteToService()
+    {
+        $this
+            ->forAll(
+                Set\Elements::of(...ProtocolVersion::cases()),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        new Set\Randomize(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                    Set\Integers::between(0, 10),
+                ),
+            )
+            ->then(function($protocol, $variables) {
+                $expected = $this->createMock(Response::class);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->route('GET /foo', To::service('response-handler'))
+                    ->service('response-handler', static fn() => new class($expected) {
+                        public function __construct(private $response)
+                        {
+                        }
+
+                        public function __invoke()
+                        {
+                            return $this->response;
+                        }
+                    });
+
+                $response = $app->run(new ServerRequest(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($expected, $response);
             });
     }
 

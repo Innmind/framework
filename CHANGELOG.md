@@ -5,6 +5,7 @@
 ### Added
 
 - `Innmind\Framework\Application::route()`
+- `Innmind\Framework\Http\To`
 
 ## 1.2.0 - 2023-04-29
 

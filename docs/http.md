@@ -141,6 +141,7 @@ use Innmind\Framework\{
     Application,
     Http\Routes,
     Http\Service,
+    Http\To,
 };
 use Innmind\DI\Container;
 use Innmind\Router\{
@@ -188,9 +189,9 @@ new class extends Http {
             )
             ->appendRoutes(
                 static fn(Routes $routes, Container $container) => $routes
-                    ->add(Route::literal('GET /')->handle(Service::of($container, 'hello-word')))
-                    ->add(Route::literal('GET /{name}')->handle(Service::of($container, 'hello-name'))),
-            );
+                    ->add(Route::literal('GET /')->handle(Service::of($container, 'hello-word'))),
+            )
+            ->route('GET /{name}', To::service('hello-name'));
     }
 };
 ```
