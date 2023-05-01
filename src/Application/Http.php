@@ -18,6 +18,10 @@ use Innmind\Http\Message\{
     ServerRequest,
     Response,
 };
+use Innmind\Router\{
+    Route,
+    Route\Variables,
+};
 use Innmind\Immutable\Maybe;
 
 final class Http
@@ -129,6 +133,27 @@ final class Http
             $this->routes,
             $this->mapRequestHandler,
             $this->notFound,
+        );
+    }
+
+    /**
+     * @psalm-mutation-free
+     *
+     * @param literal-string $pattern
+     * @param callable(ServerRequest, Variables, Container, OperatingSystem, Environment): Response $handle
+     */
+    public function route(string $pattern, callable $handle): self
+    {
+        return $this->appendRoutes(
+            static fn($routes, $container, $os, $env) => $routes->add(
+                Route::literal($pattern)->handle(static fn($request, $variables) => $handle(
+                    $request,
+                    $variables,
+                    $container,
+                    $os,
+                    $env,
+                )),
+            ),
         );
     }
 

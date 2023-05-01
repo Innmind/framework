@@ -17,6 +17,10 @@ use Innmind\Http\Message\{
     ServerRequest,
     Response,
 };
+use Innmind\Router\{
+    Route,
+    Route\Variables,
+};
 
 final class Application
 {
@@ -118,6 +122,24 @@ final class Application
     {
         if ($this->app instanceof Application\Cli) {
             return new self($this->app->mapCommand($map));
+        }
+
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
+     *
+     * @param literal-string $pattern
+     * @param callable(ServerRequest, Variables, Container, OperatingSystem, Environment): Response $handle
+     */
+    public function route(string $pattern, callable $handle): self
+    {
+        if (
+            $this->app instanceof Application\Http ||
+            $this->app instanceof Application\Async\Http
+        ) {
+            return new self($this->app->route($pattern, $handle));
         }
 
         return $this;

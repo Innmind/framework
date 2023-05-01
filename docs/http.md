@@ -94,6 +94,43 @@ new class extends Http {
 
 For simple apps having the whole behaviour next to the route can be ok. But like in this case it can be repetitive, for such case we can specify our behaviours elsewhere: [services](#Services).
 
+## Short syntax
+
+The previous shows the default way to declare routes, but for very simple apps it can be a bit verbose. The framework provides a shorter syntax to handle routes:
+
+```php
+use Innmind\Framework\{
+    Main\Http,
+    Application,
+};
+use Innmind\Router\Route\Variables;
+use Innmind\Http\Message\{
+    ServerRequest,
+    Response\Response,
+    StatusCode,
+};
+use Innmind\Filesystem\File\Content;
+
+new class extends Http {
+    protected function configure(Application $app): Application
+    {
+        return $app
+            ->route('GET /', static fn(ServerRequest $request) => new Response(
+                StatusCode::ok,
+                $request->protocolVersion(),
+                null,
+                Content\Lines::ofContent('Hello world!'),
+            ))
+            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => new Response(
+                StatusCode::ok,
+                $request->protocolVersion(),
+                null,
+                Content\Lines::ofContent("Hello {$variables->get('name')}!"),
+            ));
+    }
+};
+```
+
 ## Services
 
 Services are any object that are referenced by a string in a [`Container`](https://github.com/Innmind/DI). For example let's take the route handler from the previous section and move them inside services.
@@ -104,6 +141,7 @@ use Innmind\Framework\{
     Application,
     Http\Routes,
     Http\Service,
+    Http\To,
 };
 use Innmind\DI\Container;
 use Innmind\Router\{
@@ -151,16 +189,16 @@ new class extends Http {
             )
             ->appendRoutes(
                 static fn(Routes $routes, Container $container) => $routes
-                    ->add(Route::literal('GET /')->handle(Service::of($container, 'hello-word')))
-                    ->add(Route::literal('GET /{name}')->handle(Service::of($container, 'hello-name'))),
-            );
+                    ->add(Route::literal('GET /')->handle(Service::of($container, 'hello-word'))),
+            )
+            ->route('GET /{name}', To::service('hello-name'));
     }
 };
 ```
 
 Here the services are invokable anonymous classes to conform to the callable expected for a `Route` but you can create dedicated classes for each one.
 
-**Note**: Head to the [services topic](services.md) for a more in-depth look of what's possible.
+> **Note** Head to the [services topic](services.md) for a more in-depth look of what's possible.
 
 ## Executing code on any route
 
@@ -216,7 +254,7 @@ This example will refuse any request that doesn't have an `Authorization` header
 
 You can have multiple calls to `mapRequestHandler` to compose behaviours like an onion.
 
-**Note**: the default request handler is the inner router of the framework, this means that you can completely change the default behaviour of the framework by returning a new request handler that never uses the default one.
+> **Note** the default request handler is the inner router of the framework, this means that you can completely change the default behaviour of the framework by returning a new request handler that never uses the default one.
 
 ## Handling unknown routes
 
