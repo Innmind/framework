@@ -24,7 +24,7 @@ Take a look at the [documentation](docs/) for a more in-depth understanding of t
 
 The first step is to create the index file that will be exposed via a webserver (for example `public/index.php`). Then you need to specify the routes you want to handle.
 
-**Note**: if you don't configure any route it will respond with `404 Not Found` with an empty body.
+> **Note** if you don't configure any route it will respond with `404 Not Found` with an empty body.
 
 ```php
 <?php
@@ -80,7 +80,7 @@ You can run this script via `cd public && php -S localhost:8080`. If you open yo
 
 The entrypoint of your cli tools will look something like this.
 
-**Note**: by default if you don't configure any command it will always display `Hello world`.
+> **Note** by default if you don't configure any command it will always display `Hello world`.
 
 ```php
 <?php

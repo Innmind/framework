@@ -198,7 +198,7 @@ new class extends Http {
 
 Here the services are invokable anonymous classes to conform to the callable expected for a `Route` but you can create dedicated classes for each one.
 
-**Note**: Head to the [services topic](services.md) for a more in-depth look of what's possible.
+> **Note** Head to the [services topic](services.md) for a more in-depth look of what's possible.
 
 ## Executing code on any route
 
@@ -254,7 +254,7 @@ This example will refuse any request that doesn't have an `Authorization` header
 
 You can have multiple calls to `mapRequestHandler` to compose behaviours like an onion.
 
-**Note**: the default request handler is the inner router of the framework, this means that you can completely change the default behaviour of the framework by returning a new request handler that never uses the default one.
+> **Note** the default request handler is the inner router of the framework, this means that you can completely change the default behaviour of the framework by returning a new request handler that never uses the default one.
 
 ## Handling unknown routes
 

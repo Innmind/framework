@@ -2,7 +2,7 @@
 
 The framework comes with an HTTP server entirely built in PHP allowing you to serve your app without extra dependencies in ther earlist stages of your project.
 
-**Note**: This feature is optional, to use it you must before run `composer require innmind/async-http-server`.
+> **Note** This feature is optional, to use it you must before run `composer require innmind/async-http-server`.
 
 To use it is similar to the standard [http](../http.md) handler, the first difference is the namespace of the main entrypoint:
 
@@ -29,4 +29,4 @@ Note the namespace is `Main\Async\Http` instead of `Main\Http`. The other differ
 
 All the configuration of the `Application` object is identical to the other contexts.
 
-**Note**: The server currently does have limitations, streamed requests (via `Transfer-Encoding`) are not supported and multipart requests are not parsed.
+> **Note** The server currently does have limitations, streamed requests (via `Transfer-Encoding`) are not supported and multipart requests are not parsed.
