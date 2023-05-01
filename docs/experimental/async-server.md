@@ -30,3 +30,5 @@ Note the namespace is `Main\Async\Http` instead of `Main\Http`. The other differ
 All the configuration of the `Application` object is identical to the other contexts.
 
 > **Note** The server currently does have limitations, streamed requests (via `Transfer-Encoding`) are not supported and multipart requests are not parsed.
+
+> **Warning** This server was built to showcase in a conference talk the ability to switch between synchronous code and asynchronous code without changing the app code. Do **NOT** use this server in production.
