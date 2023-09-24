@@ -52,17 +52,16 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $arguments, $variables) {
                 $app = Application::cli(Factory::build(), $env = Environment::test($variables));
@@ -87,17 +86,16 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $arguments, $variables) {
                 $os = Factory::build();
@@ -155,16 +153,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
@@ -200,16 +197,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
@@ -270,17 +266,16 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
                 Set\Strings::atLeast(1),
             )
             ->then(function($inputs, $interactive, $arguments, $variables, $service) {
@@ -307,16 +302,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
                 Set\Strings::atLeast(1),
             )
             ->then(function($inputs, $interactive, $variables, $service) {
@@ -359,16 +353,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
                 Set\Strings::atLeast(1),
                 Set\Strings::atLeast(1),
             )
@@ -413,16 +406,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
@@ -474,16 +466,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
@@ -535,16 +526,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $variables) {
                 static $testRuns = 0;
@@ -612,16 +602,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
@@ -695,16 +684,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $variables) {
                 $middleware = new class implements Middleware {
@@ -754,16 +742,15 @@ class ApplicationTest extends TestCase
     {
         $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any(), Set\Integers::between(0, 10)),
+                Set\Sequence::of(Set\Strings::any())->between(0, 10),
                 Set\Elements::of(true, false),
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
@@ -813,11 +800,10 @@ class ApplicationTest extends TestCase
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($url, $method, $protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables));
@@ -841,11 +827,10 @@ class ApplicationTest extends TestCase
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($protocol, $variables) {
                 $responseA = $this->createMock(Response::class);
@@ -893,11 +878,10 @@ class ApplicationTest extends TestCase
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($protocol, $variables) {
                 $responseA = $this->createMock(Response::class);
@@ -941,11 +925,10 @@ class ApplicationTest extends TestCase
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($protocol, $variables) {
                 $expected = $this->createMock(Response::class);
@@ -983,11 +966,10 @@ class ApplicationTest extends TestCase
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($url, $method, $protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables))
@@ -1037,11 +1019,10 @@ class ApplicationTest extends TestCase
                 Set\Sequence::of(
                     Set\Composite::immutable(
                         static fn($key, $value) => [$key, $value],
-                        new Set\Randomize(Set\Strings::any()),
+                        Set\Randomize::of(Set\Strings::any()),
                         Set\Strings::any(),
                     ),
-                    Set\Integers::between(0, 10),
-                ),
+                )->between(0, 10),
             )
             ->then(function($url, $method, $protocol, $variables) {
                 $expected = $this->createMock(Response::class);
