@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## 1.4.0 - 2023-09-24
+
+### Added
+
+- Support for `innmind/immutable:~5.0`
 
 ### Removed
 

@@ -18,7 +18,7 @@
         "php": "~8.2",
         "innmind/operating-system": "^3.2",
         "innmind/cli": "^3.1",
-        "innmind/immutable": "^4.9",
+        "innmind/immutable": "^4.9|~5.0",
         "innmind/di": "^2.0",
         "ramsey/uuid": "^4.7",
         "innmind/url": "^4.1",
