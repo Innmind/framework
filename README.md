@@ -41,10 +41,10 @@ use Innmind\Router\{
     Route,
     Route\Variables,
 };
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
@@ -54,19 +54,19 @@ new class extends Http {
         return $app->appendRoutes(
             static fn(Routes $routes) => $routes
                 ->add(Route::literal('GET /')->handle(
-                    static fn(ServerRequest $request) => new Response(
+                    static fn(ServerRequest $request) => Response::of(
                         StatusCode::ok,
                         $request->protocolVersion(),
                         null,
-                        Content\Lines::ofContent('Hello world!'),
+                        Content::ofString('Hello world!'),
                     ),
                 ))
                 ->add(Route::literal('GET /{name}')->handle(
-                    static fn(ServerRequest $request, Variables $variables) => new Response(
+                    static fn(ServerRequest $request, Variables $variables) => Response::of(
                         StatusCode::ok,
                         $request->protocolVersion(),
                         null,
-                        Content\Lines::ofContent("Hello {$variables->get('name')}!"),
+                        Content::ofString("Hello {$variables->get('name')}!"),
                     ),
                 )),
         );

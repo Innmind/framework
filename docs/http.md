@@ -59,10 +59,10 @@ use Innmind\Router\{
     Route,
     Route\Variables,
 };
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
@@ -72,19 +72,19 @@ new class extends Http {
         return $app->appendRoutes(
             static fn(Routes $routes) => $routes
                 ->add(Route::literal('GET /')->handle(
-                    static fn(ServerRequest $request) => new Response(
+                    static fn(ServerRequest $request) => Response::of(
                         StatusCode::ok,
                         $request->protocolVersion(),
                         null,
-                        Content\Lines::ofContent('Hello world!'),
+                        Content::ofString('Hello world!'),
                     ),
                 ))
                 ->add(Route::literal('GET /{name}')->handle(
-                    static fn(ServerRequest $request, Variables $variables) => new Response(
+                    static fn(ServerRequest $request, Variables $variables) => Response::of(
                         StatusCode::ok,
                         $request->protocolVersion(),
                         null,
-                        Content\Lines::ofContent("Hello {$variables->get('name')}!"),
+                        Content::ofString("Hello {$variables->get('name')}!"),
                     ),
                 )),
         );
@@ -104,10 +104,10 @@ use Innmind\Framework\{
     Application,
 };
 use Innmind\Router\Route\Variables;
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
@@ -115,17 +115,17 @@ new class extends Http {
     protected function configure(Application $app): Application
     {
         return $app
-            ->route('GET /', static fn(ServerRequest $request) => new Response(
+            ->route('GET /', static fn(ServerRequest $request) => Response::of(
                 StatusCode::ok,
                 $request->protocolVersion(),
                 null,
-                Content\Lines::ofContent('Hello world!'),
+                Content::ofString('Hello world!'),
             ))
-            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => new Response(
+            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => Response::of(
                 StatusCode::ok,
                 $request->protocolVersion(),
                 null,
-                Content\Lines::ofContent("Hello {$variables->get('name')}!"),
+                Content::ofString("Hello {$variables->get('name')}!"),
             ));
     }
 };
@@ -150,8 +150,8 @@ use Innmind\Router\{
 };
 use Innmind\Http\Message\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
@@ -164,11 +164,11 @@ new class extends Http {
                 static fn() => new class {
                     public function __invoke(ServerRequest $request): Response
                     {
-                        return new Response(
+                        return Response::of(
                             StatusCode::ok,
                             $request->protocolVersion(),
                             null,
-                            Content\Lines::ofContent('Hello world!'),
+                            Content::ofString('Hello world!'),
                         );
                     }
                 }
@@ -178,11 +178,11 @@ new class extends Http {
                 static fn() => new class {
                     public function __invoke(ServerRequest $request, Variables $variables): Response
                     {
-                        return new Response(
+                        return Response::of(
                             StatusCode::ok,
                             $request->protocolVersion(),
                             null,
-                            Content\Lines::ofContent("Hello {$variables->get('name')}!"),
+                            Content::ofString("Hello {$variables->get('name')}!"),
                         );
                     }
                 }
@@ -215,7 +215,7 @@ use Innmind\Framework\{
 use Innmind\Http\Message\{
     ServerRequest,
     Response,
-    StatusCode,
+    Response\StatusCode,
 };
 
 new class extends Http {
@@ -233,7 +233,7 @@ new class extends Http {
                     {
                         // use something stronger in a real app
                         if (!$request->headers()->contains('authorization')) {
-                            return new Response\Response(
+                            return Response::of(
                                 StatusCode::unauthorized,
                                 $request->protocolVersion(),
                             );
@@ -267,8 +267,8 @@ use Innmind\Framework\{
 };
 use Innmind\Http\Message\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
@@ -276,11 +276,11 @@ new class extends Http {
     protected function configure(Application $app): Application
     {
         return $app->notFoundRequestHandler(
-            static fn(ServerRequest $request) => new Response(
+            static fn(ServerRequest $request) => Response::of(
                 StatusCode::notFound,
                 $request->protocolVersion(),
                 null,
-                Content\Line::ofContent('Page Not Found!'), // or return something more elaborated such as html
+                Content::ofString('Page Not Found!'), // or return something more elaborated such as html
             ),
         );
     }

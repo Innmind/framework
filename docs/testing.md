@@ -13,9 +13,9 @@ use Innmind\Framework\{
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\Http\{
-    Message\ServerRequest\ServerRequest,
-    Message\Response,
-    Message\Method,
+    ServerRequest,
+    Response,
+    Method,
     ProtocolVersion,
 };
 use Innmind\Url\Url;
@@ -30,7 +30,7 @@ final class AppTest extends TestCase
             'AMQP_URL' => 'amqp://guest:guest@localhost:5672/',
         ]))->map(new Kernel);
 
-        $response = $app->run(new ServerRequest(
+        $response = $app->run(ServerRequest::of(
             Url::of('/'),
             Method::get,
             ProtocolVersion::v20,
@@ -50,12 +50,7 @@ use Innmind\Framework\{
     Environment,
 };
 use Innmind\OperatingSystem\Factory;
-use Innmind\Http\{
-    Message\ServerRequest\ServerRequest,
-    Message\Method,
-    ProtocolVersion,
-};
-use Innmind\Url\Url;
+use Innmind\CLI\Environment\InMemory;
 use PHPUnit\Framework\TestCase;
 
 final class AppTest extends TestCase
@@ -102,9 +97,9 @@ use Innmind\Framework\{
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\Http\{
-    Message\ServerRequest,
-    Message\Response,
-    Message\Method,
+    ServerRequest,
+    Response,
+    Method,
     ProtocolVersion,
 };
 use Innmind\Url\Url;
@@ -145,7 +140,7 @@ final class AppTest extends TestCase
                 },
             );
 
-        $response = $app->run(new ServerRequest\ServerRequest(
+        $response = $app->run(ServerRequest::of(
             Url::of('/some-route/some-id'),
             Method::delete,
             ProtocolVersion::v20,
