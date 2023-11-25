@@ -13,7 +13,7 @@ use Innmind\CLI\{
     Command,
 };
 use Innmind\DI\Container;
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
     Response,
 };

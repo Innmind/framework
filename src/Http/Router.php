@@ -3,10 +3,10 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework\Http;
 
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
     Response,
-    StatusCode,
+    Response\StatusCode,
 };
 use Innmind\Router\RequestMatcher\RequestMatcher;
 use Innmind\Immutable\Maybe;
@@ -38,7 +38,7 @@ final class Router implements RequestHandler
             ->otherwise(fn() => $this->notFound)
             ->match(
                 static fn($handle) => $handle($request),
-                static fn() => new Response\Response(
+                static fn() => Response::of(
                     StatusCode::notFound,
                     $request->protocolVersion(),
                 ),

@@ -16,15 +16,15 @@
     },
     "require": {
         "php": "~8.2",
-        "innmind/operating-system": "^3.2",
+        "innmind/operating-system": "~4.1",
         "innmind/cli": "^3.1",
-        "innmind/immutable": "^4.9|~5.0",
+        "innmind/immutable": "~5.2",
         "innmind/di": "^2.0",
         "ramsey/uuid": "^4.7",
         "innmind/url": "^4.1",
-        "innmind/filesystem": "^6.0",
-        "innmind/http-server": "^3.0",
-        "innmind/router": "^3.0"
+        "innmind/filesystem": "~7.0",
+        "innmind/http-server": "~4.0",
+        "innmind/router": "~4.0"
     },
     "autoload": {
         "psr-4": {
@@ -41,11 +41,11 @@
         "vimeo/psalm": "~5.6",
         "innmind/black-box": "~5.5",
         "innmind/coding-standard": "~2.0",
-        "innmind/async-http-server": "~1.0"
+        "innmind/async-http-server": "~2.0"
     },
     "conflict": {
         "innmind/black-box": "<5.0|~6.0",
-        "innmind/async-http-server": "<1.0|~2.0"
+        "innmind/async-http-server": "<2.0|~3.0"
     },
     "suggest": {
         "innmind/black-box": "For property based testing",

@@ -16,6 +16,7 @@ use Innmind\Url\Path;
 use Innmind\Immutable\{
     Sequence,
     Str,
+    Predicate\Instance,
 };
 
 final class LoadDotEnv implements Middleware
@@ -34,6 +35,7 @@ final class LoadDotEnv implements Middleware
                 ->filesystem()
                 ->mount($this->folder)
                 ->get(Name::of('.env'))
+                ->keep(Instance::of(File::class))
                 ->match(
                     fn($file) => $this->add($env, $file),
                     static fn() => $env,

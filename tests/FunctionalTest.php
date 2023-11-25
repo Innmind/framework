@@ -13,8 +13,8 @@ use Innmind\HttpTransport\{
     ClientError,
 };
 use Innmind\Http\{
-    Message\Request\Request,
-    Message\Method,
+    Request,
+    Method,
     ProtocolVersion,
 };
 use Innmind\Url\Url;
@@ -57,7 +57,7 @@ class FunctionalTest extends TestCase
         $error = $this
             ->os
             ->remote()
-            ->http()(new Request(
+            ->http()(Request::of(
                 Url::of('http://127.0.0.1:8080/'),
                 Method::get,
                 ProtocolVersion::v10,
@@ -73,7 +73,7 @@ class FunctionalTest extends TestCase
         $success = $this
             ->os
             ->remote()
-            ->http()(new Request(
+            ->http()(Request::of(
                 Url::of('http://127.0.0.1:8080/hello'),
                 Method::get,
                 ProtocolVersion::v10,

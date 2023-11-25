@@ -22,7 +22,7 @@ use Innmind\DI\{
     Container,
     Builder,
 };
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
     Response,
 };
