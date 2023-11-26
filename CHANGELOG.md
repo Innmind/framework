@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `Innmind\Framework\Http\Routes::append()`
+- `Innmind\Framework\Http\Routes::add()` now also accepts `Innmind\Router\Under`
+
+### Changed
+
+- Requires `innmind/operating-system:~4.1`
+- Requires `innmind/immutable:~5.2`
+- Requires `innmind/filesystem:~7.0`
+- Requires `innmind/http-server:~4.0`
+- Requires `innmind/router:~4.1`
+- Requires `innmind/innmind/async-http-server:~2.0`
+
+### Fixed
+
+- All routes are no longer kept in memory when no longer used
+
 ## 1.4.0 - 2023-09-24
 
 ### Added
