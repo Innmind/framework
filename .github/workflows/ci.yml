@@ -3,14 +3,14 @@ name: CI
 on: [push]
 
 jobs:
-  phpunit:
+  blackbox:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
         php-version: ['8.2', '8.3']
         dependencies: ['lowest', 'highest']
-    name: 'PHPUnit'
+    name: 'BlackBox'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -24,8 +24,8 @@ jobs:
         uses: "ramsey/composer-install@v2"
         with:
           dependency-versions: ${{ matrix.dependencies }}
-      - name: PHPUnit
-        run: vendor/bin/phpunit
+      - name: BlackBox
+        run: php blackbox.php
   coverage:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -47,10 +47,10 @@ jobs:
         uses: "ramsey/composer-install@v2"
         with:
           dependency-versions: ${{ matrix.dependencies }}
-      - name: PHPUnit
-        run: vendor/bin/phpunit --coverage-clover=coverage.clover
+      - name: BlackBox
+        run: php blackbox.php
         env:
-          BLACKBOX_SET_SIZE: 1
+          ENABLE_COVERAGE: 'true'
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

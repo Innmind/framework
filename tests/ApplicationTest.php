@@ -36,10 +36,10 @@ use Innmind\Immutable\{
     Map,
     Str,
 };
-use PHPUnit\Framework\TestCase;
 use Innmind\BlackBox\{
     PHPUnit\BlackBox,
     Set,
+    PHPUnit\Framework\TestCase,
 };
 use Fixtures\Innmind\Url\Url as FUrl;
 
