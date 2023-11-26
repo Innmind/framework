@@ -24,5 +24,10 @@ abstract class Http extends Main
         return static::configure(Application::asyncHttp($os))->run($env);
     }
 
+    /**
+     * @param Application<Environment, Environment> $app
+     *
+     * @return Application<Environment, Environment>
+     */
     abstract protected function configure(Application $app): Application;
 }

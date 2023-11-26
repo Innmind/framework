@@ -24,5 +24,10 @@ abstract class Cli extends Main
         return static::configure(Application::cli($os, AppEnv::of($env->variables())))->run($env);
     }
 
+    /**
+     * @param Application<Environment, Environment> $app
+     *
+     * @return Application<Environment, Environment>
+     */
     abstract protected function configure(Application $app): Application;
 }

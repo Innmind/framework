@@ -3,7 +3,10 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework\Http;
 
-use Innmind\Router\Route;
+use Innmind\Router\{
+    Route,
+    Under,
+};
 use Innmind\Immutable\Sequence;
 
 /**
@@ -11,11 +14,11 @@ use Innmind\Immutable\Sequence;
  */
 final class Routes
 {
-    /** @var Sequence<Route> */
+    /** @var Sequence<Route|Under> */
     private Sequence $routes;
 
     /**
-     * @param Sequence<Route> $routes
+     * @param Sequence<Route|Under> $routes
      */
     private function __construct(Sequence $routes)
     {
@@ -30,15 +33,23 @@ final class Routes
         return new self(Sequence::lazyStartingWith());
     }
 
-    public function add(Route $route): self
+    public function add(Route|Under $route): self
     {
         return new self(($this->routes)($route));
     }
 
     /**
+     * @param Sequence<Route|Under> $routes
+     */
+    public function append(Sequence $routes): self
+    {
+        return new self($this->routes->append($routes));
+    }
+
+    /**
      * @internal
      *
-     * @return Sequence<Route>
+     * @return Sequence<Route|Under>
      */
     public function toSequence(): Sequence
     {

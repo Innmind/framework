@@ -18,13 +18,15 @@ use Innmind\CLI\{
     Command,
     Console,
 };
-use Innmind\Router\Route;
+use Innmind\Router\{
+    Route,
+    Under,
+};
 use Innmind\Http\{
-    Message\ServerRequest as ServerRequestInterface,
-    Message\ServerRequest\ServerRequest,
-    Message\Response,
-    Message\Method,
-    Message\StatusCode,
+    ServerRequest,
+    Response,
+    Method,
+    Response\StatusCode,
     ProtocolVersion,
     Header\ContentType,
 };
@@ -37,10 +39,10 @@ use Innmind\Immutable\{
     Map,
     Str,
 };
-use PHPUnit\Framework\TestCase;
 use Innmind\BlackBox\{
     PHPUnit\BlackBox,
     Set,
+    PHPUnit\Framework\TestCase,
 };
 use Fixtures\Innmind\Url\Url as FUrl;
 
@@ -808,7 +810,7 @@ class ApplicationTest extends TestCase
             ->then(function($url, $method, $protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables));
 
-                $response = $app->run(new ServerRequest(
+                $response = $app->run(ServerRequest::of(
                     $url,
                     $method,
                     $protocol,
@@ -833,8 +835,8 @@ class ApplicationTest extends TestCase
                 )->between(0, 10),
             )
             ->then(function($protocol, $variables) {
-                $responseA = $this->createMock(Response::class);
-                $responseB = $this->createMock(Response::class);
+                $responseA = Response::of(StatusCode::ok, $protocol);
+                $responseB = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
                     ->appendRoutes(fn($routes) => $routes->add(
@@ -852,7 +854,7 @@ class ApplicationTest extends TestCase
                         }),
                     ));
 
-                $response = $app->run(new ServerRequest(
+                $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
@@ -860,7 +862,7 @@ class ApplicationTest extends TestCase
 
                 $this->assertSame($responseA, $response);
 
-                $response = $app->run(new ServerRequest(
+                $response = $app->run(ServerRequest::of(
                     Url::of('/bar'),
                     Method::get,
                     $protocol,
@@ -884,8 +886,8 @@ class ApplicationTest extends TestCase
                 )->between(0, 10),
             )
             ->then(function($protocol, $variables) {
-                $responseA = $this->createMock(Response::class);
-                $responseB = $this->createMock(Response::class);
+                $responseA = Response::of(StatusCode::ok, $protocol);
+                $responseB = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
                     ->route('GET /foo', function($request) use ($protocol, $responseA) {
@@ -899,7 +901,7 @@ class ApplicationTest extends TestCase
                         return $responseB;
                     });
 
-                $response = $app->run(new ServerRequest(
+                $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
@@ -907,7 +909,7 @@ class ApplicationTest extends TestCase
 
                 $this->assertSame($responseA, $response);
 
-                $response = $app->run(new ServerRequest(
+                $response = $app->run(ServerRequest::of(
                     Url::of('/bar'),
                     Method::get,
                     $protocol,
@@ -931,7 +933,7 @@ class ApplicationTest extends TestCase
                 )->between(0, 10),
             )
             ->then(function($protocol, $variables) {
-                $expected = $this->createMock(Response::class);
+                $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
                     ->route('GET /foo', To::service('response-handler'))
@@ -946,7 +948,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $response = $app->run(new ServerRequest(
+                $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
@@ -979,11 +981,11 @@ class ApplicationTest extends TestCase
                         ) {
                         }
 
-                        public function __invoke(ServerRequestInterface $request): Response
+                        public function __invoke(ServerRequest $request): Response
                         {
                             $response = ($this->inner)($request);
 
-                            return new Response\Response(
+                            return Response::of(
                                 $response->statusCode(),
                                 $response->protocolVersion(),
                                 $response->headers()(ContentType::of('application', 'octet-stream')),
@@ -991,7 +993,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $response = $app->run(new ServerRequest(
+                $response = $app->run(ServerRequest::of(
                     $url,
                     $method,
                     $protocol,
@@ -1025,7 +1027,7 @@ class ApplicationTest extends TestCase
                 )->between(0, 10),
             )
             ->then(function($url, $method, $protocol, $variables) {
-                $expected = $this->createMock(Response::class);
+                $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
                     ->notFoundRequestHandler(function($request) use ($protocol, $expected) {
@@ -1034,13 +1036,43 @@ class ApplicationTest extends TestCase
                         return $expected;
                     });
 
-                $response = $app->run(new ServerRequest(
+                $response = $app->run(ServerRequest::of(
                     $url,
                     $method,
                     $protocol,
                 ));
 
                 $this->assertSame($expected, $response);
+            });
+    }
+
+    public function testMatchMethodAllowed()
+    {
+        $this
+            ->forAll(
+                Set\Elements::of(...ProtocolVersion::cases()),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        Set\Randomize::of(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                )->between(0, 10),
+            )
+            ->then(function($protocol, $variables) {
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->appendRoutes(static fn($routes) => $routes->add(
+                        Under::of(Template::of('/foo'))->route(Method::get),
+                    ));
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::head,
+                    $protocol,
+                ));
+
+                $this->assertSame(405, $response->statusCode()->toInt());
+                $this->assertSame($protocol, $response->protocolVersion());
             });
     }
 }

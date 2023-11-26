@@ -4,7 +4,7 @@ declare(strict_types = 1);
 namespace Innmind\Framework;
 
 use Innmind\Framework\Exception\LogicException;
-use Innmind\Http\Message\Environment as HttpEnvironment;
+use Innmind\Http\ServerRequest\Environment as HttpEnvironment;
 use Innmind\Immutable\{
     Map,
     Maybe,

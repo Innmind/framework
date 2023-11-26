@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework\Http;
 
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
     Response,
 };

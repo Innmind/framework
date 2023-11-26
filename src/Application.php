@@ -13,7 +13,7 @@ use Innmind\CLI\{
     Command,
 };
 use Innmind\DI\Container;
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
     Response,
 };
@@ -22,20 +22,29 @@ use Innmind\Router\{
     Route\Variables,
 };
 
+/**
+ * @template I of ServerRequest|CliEnv
+ * @template O of Response|CliEnv
+ */
 final class Application
 {
-    private Application\Cli|Application\Http|Application\Async\Http $app;
+    /** @var Application\Implementation<I, O> */
+    private Application\Implementation $app;
 
     /**
      * @psalm-mutation-free
+     *
+     * @param Application\Implementation<I, O> $app
      */
-    private function __construct(Application\Cli|Application\Http|Application\Async\Http $app)
+    private function __construct(Application\Implementation $app)
     {
         $this->app = $app;
     }
 
     /**
      * @psalm-pure
+     *
+     * @return self<ServerRequest, Response>
      */
     public static function http(OperatingSystem $os, Environment $env): self
     {
@@ -44,6 +53,8 @@ final class Application
 
     /**
      * @psalm-pure
+     *
+     * @return self<CliEnv, CliEnv>
      */
     public static function cli(OperatingSystem $os, Environment $env): self
     {
@@ -53,6 +64,8 @@ final class Application
     /**
      * @psalm-pure
      * @experimental
+     *
+     * @return self<CliEnv, CliEnv>
      */
     public static function asyncHttp(OperatingSystem $os): self
     {
@@ -63,6 +76,8 @@ final class Application
      * @psalm-mutation-free
      *
      * @param callable(Environment, OperatingSystem): Environment $map
+     *
+     * @return self<I, O>
      */
     public function mapEnvironment(callable $map): self
     {
@@ -73,6 +88,8 @@ final class Application
      * @psalm-mutation-free
      *
      * @param callable(OperatingSystem, Environment): OperatingSystem $map
+     *
+     * @return self<I, O>
      */
     public function mapOperatingSystem(callable $map): self
     {
@@ -81,6 +98,8 @@ final class Application
 
     /**
      * @psalm-mutation-free
+     *
+     * @return self<I, O>
      */
     public function map(Middleware $map): self
     {
@@ -93,6 +112,8 @@ final class Application
      *
      * @param non-empty-string $name
      * @param callable(Container, OperatingSystem, Environment): object $definition
+     *
+     * @return self<I, O>
      */
     public function service(string $name, callable $definition): self
     {
@@ -103,28 +124,24 @@ final class Application
      * @psalm-mutation-free
      *
      * @param callable(Container, OperatingSystem, Environment): Command $command
+     *
+     * @return self<I, O>
      */
     public function command(callable $command): self
     {
-        if ($this->app instanceof Application\Cli) {
-            return new self($this->app->command($command));
-        }
-
-        return $this;
+        return new self($this->app->command($command));
     }
 
     /**
      * @psalm-mutation-free
      *
      * @param callable(Command, Container, OperatingSystem, Environment): Command $map
+     *
+     * @return self<I, O>
      */
     public function mapCommand(callable $map): self
     {
-        if ($this->app instanceof Application\Cli) {
-            return new self($this->app->mapCommand($map));
-        }
-
-        return $this;
+        return new self($this->app->mapCommand($map));
     }
 
     /**
@@ -132,73 +149,57 @@ final class Application
      *
      * @param literal-string $pattern
      * @param callable(ServerRequest, Variables, Container, OperatingSystem, Environment): Response $handle
+     *
+     * @return self<I, O>
      */
     public function route(string $pattern, callable $handle): self
     {
-        if (
-            $this->app instanceof Application\Http ||
-            $this->app instanceof Application\Async\Http
-        ) {
-            return new self($this->app->route($pattern, $handle));
-        }
-
-        return $this;
+        return new self($this->app->route($pattern, $handle));
     }
 
     /**
      * @psalm-mutation-free
      *
      * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
+     *
+     * @return self<I, O>
      */
     public function appendRoutes(callable $append): self
     {
-        if (
-            $this->app instanceof Application\Http ||
-            $this->app instanceof Application\Async\Http
-        ) {
-            return new self($this->app->appendRoutes($append));
-        }
-
-        return $this;
+        return new self($this->app->appendRoutes($append));
     }
 
     /**
      * @psalm-mutation-free
      *
      * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
+     *
+     * @return self<I, O>
      */
     public function mapRequestHandler(callable $map): self
     {
-        if (
-            $this->app instanceof Application\Http ||
-            $this->app instanceof Application\Async\Http
-        ) {
-            return new self($this->app->mapRequestHandler($map));
-        }
-
-        return $this;
+        return new self($this->app->mapRequestHandler($map));
     }
 
     /**
      * @psalm-mutation-free
      *
      * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
+     *
+     * @return self<I, O>
      */
     public function notFoundRequestHandler(callable $handle): self
     {
-        if (
-            $this->app instanceof Application\Http ||
-            $this->app instanceof Application\Async\Http
-        ) {
-            return new self($this->app->notFoundRequestHandler($handle));
-        }
-
-        return $this;
+        return new self($this->app->notFoundRequestHandler($handle));
     }
 
+    /**
+     * @param I $input
+     *
+     * @return O
+     */
     public function run(CliEnv|ServerRequest $input): CliEnv|Response
     {
-        /** @psalm-suppress PossiblyInvalidArgument Let the app crash in case of a misuse */
         return $this->app->run($input);
     }
 }

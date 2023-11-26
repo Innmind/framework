@@ -23,7 +23,11 @@ use Innmind\Immutable\{
 };
 use Ramsey\Uuid\Uuid;
 
-final class Cli
+/**
+ * @internal
+ * @implements Implementation<CliEnv, CliEnv>
+ */
+final class Cli implements Implementation
 {
     private OperatingSystem $os;
     private Environment $env;
@@ -71,8 +75,6 @@ final class Cli
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(Environment, OperatingSystem): Environment $map
      */
     public function mapEnvironment(callable $map): self
     {
@@ -88,8 +90,6 @@ final class Cli
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(OperatingSystem, Environment): OperatingSystem $map
      */
     public function mapOperatingSystem(callable $map): self
     {
@@ -105,9 +105,6 @@ final class Cli
 
     /**
      * @psalm-mutation-free
-     *
-     * @param non-empty-string $name
-     * @param callable(Container, OperatingSystem, Environment): object $definition
      */
     public function service(string $name, callable $definition): self
     {
@@ -125,8 +122,6 @@ final class Cli
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(Container, OperatingSystem, Environment): Command $command
      */
     public function command(callable $command): self
     {
@@ -145,8 +140,6 @@ final class Cli
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(Command, Container, OperatingSystem, Environment): Command $map
      */
     public function mapCommand(callable $map): self
     {
@@ -169,7 +162,39 @@ final class Cli
         );
     }
 
-    public function run(CliEnv $env): CliEnv
+    /**
+     * @psalm-mutation-free
+     */
+    public function route(string $pattern, callable $handle): self
+    {
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
+     */
+    public function appendRoutes(callable $append): self
+    {
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
+     */
+    public function mapRequestHandler(callable $map): self
+    {
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
+     */
+    public function notFoundRequestHandler(callable $handle): self
+    {
+        return $this;
+    }
+
+    public function run($input)
     {
         $container = ($this->container)($this->os, $this->env)->build();
         $mapCommand = fn(Command $command): Command => ($this->mapCommand)(
@@ -185,8 +210,8 @@ final class Cli
         ));
 
         return $commands->match(
-            static fn($first, $rest) => Commands::of($first, ...$rest->toList())($env),
-            static fn() => $env->output(Str::of("Hello world\n")),
+            static fn($first, $rest) => Commands::of($first, ...$rest->toList())($input),
+            static fn() => $input->output(Str::of("Hello world\n")),
         );
     }
 }

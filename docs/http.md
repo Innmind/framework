@@ -59,10 +59,10 @@ use Innmind\Router\{
     Route,
     Route\Variables,
 };
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
@@ -72,19 +72,19 @@ new class extends Http {
         return $app->appendRoutes(
             static fn(Routes $routes) => $routes
                 ->add(Route::literal('GET /')->handle(
-                    static fn(ServerRequest $request) => new Response(
+                    static fn(ServerRequest $request) => Response::of(
                         StatusCode::ok,
                         $request->protocolVersion(),
                         null,
-                        Content\Lines::ofContent('Hello world!'),
+                        Content::ofString('Hello world!'),
                     ),
                 ))
                 ->add(Route::literal('GET /{name}')->handle(
-                    static fn(ServerRequest $request, Variables $variables) => new Response(
+                    static fn(ServerRequest $request, Variables $variables) => Response::of(
                         StatusCode::ok,
                         $request->protocolVersion(),
                         null,
-                        Content\Lines::ofContent("Hello {$variables->get('name')}!"),
+                        Content::ofString("Hello {$variables->get('name')}!"),
                     ),
                 )),
         );
@@ -93,6 +93,54 @@ new class extends Http {
 ```
 
 For simple apps having the whole behaviour next to the route can be ok. But like in this case it can be repetitive, for such case we can specify our behaviours elsewhere: [services](#Services).
+
+## Multiple methods for the same path
+
+For REST apis it is common to implements differents methods for the same path in a CRUD like fashion. To avoid duplicating te template for each route you can regroup your routes like this:
+
+```php
+use Innmind\Framework\{
+    Main\Http,
+    Application,
+    Http\Routes,
+};
+use Innmind\Router\Under;
+use Innmind\Http\{
+    ServerRequest,
+    Method,
+    Response,
+    Response\StatusCode,
+};
+use Innmind\UrlTemplate\Template;
+use Innmind\Filesystem\File\Content;
+
+new class extends Http {
+    protected function configure(Application $app): Application
+    {
+        return $app->appendRoutes(
+            static fn(Routes $routes) => $routes->add(
+                Under::of(Template::of('/some/resource/{id}'))
+                    ->route(Method::get, static fn($route) => $route->handle(
+                        static fn(ServerRequest $request) => Response::of(
+                            StatusCode::ok,
+                            $request->protocolVersion(),
+                            null,
+                            Content::ofString('{"id": 42, "name": "resource"}'),
+                        ),
+                    ))
+                    ->route(Method::delete, static fn($route) => $route->handle(
+                        static fn(ServerRequest $request) => Response::of(
+                            StatusCode::noContent,
+                            $request->protocolVersion(),
+                        ),
+                    ))
+            ),
+        );
+    }
+};
+```
+
+The other advantage to grouping your routes this way is that when a request matches the path but no method is defined then the framework will automatically respond a `405 Method Not Allowed`.
 
 ## Short syntax
 
@@ -104,10 +152,10 @@ use Innmind\Framework\{
     Application,
 };
 use Innmind\Router\Route\Variables;
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
@@ -115,17 +163,17 @@ new class extends Http {
     protected function configure(Application $app): Application
     {
         return $app
-            ->route('GET /', static fn(ServerRequest $request) => new Response(
+            ->route('GET /', static fn(ServerRequest $request) => Response::of(
                 StatusCode::ok,
                 $request->protocolVersion(),
                 null,
-                Content\Lines::ofContent('Hello world!'),
+                Content::ofString('Hello world!'),
             ))
-            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => new Response(
+            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => Response::of(
                 StatusCode::ok,
                 $request->protocolVersion(),
                 null,
-                Content\Lines::ofContent("Hello {$variables->get('name')}!"),
+                Content::ofString("Hello {$variables->get('name')}!"),
             ));
     }
 };
@@ -150,8 +198,8 @@ use Innmind\Router\{
 };
 use Innmind\Http\Message\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
@@ -164,11 +212,11 @@ new class extends Http {
                 static fn() => new class {
                     public function __invoke(ServerRequest $request): Response
                     {
-                        return new Response(
+                        return Response::of(
                             StatusCode::ok,
                             $request->protocolVersion(),
                             null,
-                            Content\Lines::ofContent('Hello world!'),
+                            Content::ofString('Hello world!'),
                         );
                     }
                 }
@@ -178,11 +226,11 @@ new class extends Http {
                 static fn() => new class {
                     public function __invoke(ServerRequest $request, Variables $variables): Response
                     {
-                        return new Response(
+                        return Response::of(
                             StatusCode::ok,
                             $request->protocolVersion(),
                             null,
-                            Content\Lines::ofContent("Hello {$variables->get('name')}!"),
+                            Content::ofString("Hello {$variables->get('name')}!"),
                         );
                     }
                 }
@@ -198,7 +246,8 @@ new class extends Http {
 
 Here the services are invokable anonymous classes to conform to the callable expected for a `Route` but you can create dedicated classes for each one.
 
-> **Note** Head to the [services topic](services.md) for a more in-depth look of what's possible.
+> [!NOTE]
+> Head to the [services topic](services.md) for a more in-depth look of what's possible.
 
 ## Executing code on any route
 
@@ -215,7 +264,7 @@ use Innmind\Framework\{
 use Innmind\Http\Message\{
     ServerRequest,
     Response,
-    StatusCode,
+    Response\StatusCode,
 };
 
 new class extends Http {
@@ -233,7 +282,7 @@ new class extends Http {
                     {
                         // use something stronger in a real app
                         if (!$request->headers()->contains('authorization')) {
-                            return new Response\Response(
+                            return Response::of(
                                 StatusCode::unauthorized,
                                 $request->protocolVersion(),
                             );
@@ -254,7 +303,8 @@ This example will refuse any request that doesn't have an `Authorization` header
 
 You can have multiple calls to `mapRequestHandler` to compose behaviours like an onion.
 
-> **Note** the default request handler is the inner router of the framework, this means that you can completely change the default behaviour of the framework by returning a new request handler that never uses the default one.
+> [!NOTE]
+> the default request handler is the inner router of the framework, this means that you can completely change the default behaviour of the framework by returning a new request handler that never uses the default one.
 
 ## Handling unknown routes
 
@@ -267,8 +317,8 @@ use Innmind\Framework\{
 };
 use Innmind\Http\Message\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
@@ -276,11 +326,11 @@ new class extends Http {
     protected function configure(Application $app): Application
     {
         return $app->notFoundRequestHandler(
-            static fn(ServerRequest $request) => new Response(
+            static fn(ServerRequest $request) => Response::of(
                 StatusCode::notFound,
                 $request->protocolVersion(),
                 null,
-                Content\Line::ofContent('Page Not Found!'), // or return something more elaborated such as html
+                Content::ofString('Page Not Found!'), // or return something more elaborated such as html
             ),
         );
     }

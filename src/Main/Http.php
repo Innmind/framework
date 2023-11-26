@@ -9,10 +9,10 @@ use Innmind\Framework\{
 };
 use Innmind\HttpServer\Main;
 use Innmind\OperatingSystem\OperatingSystem;
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
     Response,
-    Environment,
+    ServerRequest\Environment,
 };
 
 abstract class Http extends Main
@@ -33,5 +33,10 @@ abstract class Http extends Main
         return $this->app->run($request);
     }
 
+    /**
+     * @param Application<ServerRequest, Response> $app
+     *
+     * @return Application<ServerRequest, Response>
+     */
     abstract protected function configure(Application $app): Application;
 }

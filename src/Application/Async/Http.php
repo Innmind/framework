@@ -5,6 +5,7 @@ namespace Innmind\Framework\Application\Async;
 
 use Innmind\Framework\{
     Environment,
+    Application\Implementation,
     Http\Routes,
     Http\Router,
     Http\RequestHandler,
@@ -22,7 +23,7 @@ use Innmind\DI\{
     Container,
     Builder,
 };
-use Innmind\Http\Message\{
+use Innmind\Http\{
     ServerRequest,
     Response,
 };
@@ -30,20 +31,25 @@ use Innmind\Router\{
     Route,
     Route\Variables,
 };
-use Innmind\Immutable\Maybe;
+use Innmind\Immutable\{
+    Maybe,
+    Sequence,
+};
 
 /**
  * @experimental
+ * @internal
+ * @implements Implementation<CliEnv, CliEnv>
  */
-final class Http
+final class Http implements Implementation
 {
     private OperatingSystem $os;
     /** @var callable(OperatingSystem, Environment): array{OperatingSystem, Environment} */
     private $map;
     /** @var callable(OperatingSystem, Environment): Builder */
     private $container;
-    /** @var callable(Routes, Container, OperatingSystem, Environment): Routes */
-    private $routes;
+    /** @var Sequence<callable(Routes, Container, OperatingSystem, Environment): Routes> */
+    private Sequence $routes;
     /** @var callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler */
     private $mapRequestHandler;
     /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> */
@@ -54,7 +60,7 @@ final class Http
      *
      * @param callable(OperatingSystem, Environment): array{OperatingSystem, Environment} $map
      * @param callable(OperatingSystem, Environment): Builder $container
-     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $routes
+     * @param Sequence<callable(Routes, Container, OperatingSystem, Environment): Routes> $routes
      * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
      * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> $notFound
      */
@@ -62,7 +68,7 @@ final class Http
         OperatingSystem $os,
         callable $map,
         callable $container,
-        callable $routes,
+        Sequence $routes,
         callable $mapRequestHandler,
         Maybe $notFound,
     ) {
@@ -86,7 +92,7 @@ final class Http
             $os,
             static fn(OperatingSystem $os, Environment $env) => [$os, $env],
             static fn() => Builder::new(),
-            static fn(Routes $routes) => $routes,
+            Sequence::of(),
             static fn(RequestHandler $handler) => $handler,
             $notFound,
         );
@@ -94,8 +100,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(Environment, OperatingSystem): Environment $map
      */
     public function mapEnvironment(callable $map): self
     {
@@ -116,8 +120,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(OperatingSystem, Environment): OperatingSystem $map
      */
     public function mapOperatingSystem(callable $map): self
     {
@@ -138,9 +140,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param non-empty-string $name
-     * @param callable(Container, OperatingSystem, Environment): object $definition
      */
     public function service(string $name, callable $definition): self
     {
@@ -159,9 +158,22 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param literal-string $pattern
-     * @param callable(ServerRequest, Variables, Container, OperatingSystem, Environment): Response $handle
+     */
+    public function command(callable $command): self
+    {
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
+     */
+    public function mapCommand(callable $map): self
+    {
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
      */
     public function route(string $pattern, callable $handle): self
     {
@@ -180,8 +192,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
      */
     public function appendRoutes(callable $append): self
     {
@@ -189,17 +199,7 @@ final class Http
             $this->os,
             $this->map,
             $this->container,
-            fn(
-                Routes $routes,
-                Container $container,
-                OperatingSystem $os,
-                Environment $env,
-            ) => $append(
-                ($this->routes)($routes, $container, $os, $env),
-                $container,
-                $os,
-                $env,
-            ),
+            ($this->routes)($append),
             $this->mapRequestHandler,
             $this->notFound,
         );
@@ -207,8 +207,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
      */
     public function mapRequestHandler(callable $map): self
     {
@@ -234,8 +232,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
      */
     public function notFoundRequestHandler(callable $handle): self
     {
@@ -249,7 +245,7 @@ final class Http
         );
     }
 
-    public function run(CliEnv $env): CliEnv
+    public function run($input)
     {
         $run = Commands::of(Serve::of(
             $this->os,
@@ -257,12 +253,15 @@ final class Http
                 $env = Environment::http($request->environment());
                 [$os, $env] = ($this->map)($os, $env);
                 $container = ($this->container)($os, $env)->build();
-                $routes = ($this->routes)(
-                    Routes::lazy(),
-                    $container,
-                    $os,
-                    $env,
-                );
+                $routes = Sequence::lazyStartingWith($this->routes)
+                    ->flatMap(static fn($routes) => $routes)
+                    ->map(static fn($provide) => $provide(
+                        Routes::lazy(),
+                        $container,
+                        $os,
+                        $env,
+                    ))
+                    ->flatMap(static fn($routes) => $routes->toSequence());
                 $router = new Router(
                     $routes,
                     $this->notFound->map(
@@ -280,6 +279,6 @@ final class Http
             },
         ));
 
-        return $run($env);
+        return $run($input);
     }
 }

@@ -24,7 +24,8 @@ Take a look at the [documentation](docs/) for a more in-depth understanding of t
 
 The first step is to create the index file that will be exposed via a webserver (for example `public/index.php`). Then you need to specify the routes you want to handle.
 
-> **Note** if you don't configure any route it will respond with `404 Not Found` with an empty body.
+> [!NOTE]
+> if you don't configure any route it will respond with `404 Not Found` with an empty body.
 
 ```php
 <?php
@@ -35,41 +36,31 @@ require 'path/to/composer/autoload.php';
 use Innmind\Framework\{
     Main\Http,
     Application,
-    Http\Routes,
 };
-use Innmind\Router\{
-    Route,
-    Route\Variables,
-};
-use Innmind\Http\Message\{
+use Innmind\Router\Route\Variables;
+use Innmind\Http\{
     ServerRequest,
-    Response\Response,
-    StatusCode,
+    Response,
+    Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
 
 new class extends Http {
     protected function configure(Application $app): Application
     {
-        return $app->appendRoutes(
-            static fn(Routes $routes) => $routes
-                ->add(Route::literal('GET /')->handle(
-                    static fn(ServerRequest $request) => new Response(
-                        StatusCode::ok,
-                        $request->protocolVersion(),
-                        null,
-                        Content\Lines::ofContent('Hello world!'),
-                    ),
-                ))
-                ->add(Route::literal('GET /{name}')->handle(
-                    static fn(ServerRequest $request, Variables $variables) => new Response(
-                        StatusCode::ok,
-                        $request->protocolVersion(),
-                        null,
-                        Content\Lines::ofContent("Hello {$variables->get('name')}!"),
-                    ),
-                )),
-        );
+        return $app
+            ->route('GET /', static fn(ServerRequest $request) => Response::of(
+                StatusCode::ok,
+                $request->protocolVersion(),
+                null,
+                Content::ofString('Hello world!'),
+            ))
+            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => Response::of(
+                StatusCode::ok,
+                $request->protocolVersion(),
+                null,
+                Content::ofString("Hello {$variables->get('name')}!"),
+            ));
     }
 };
 ```
@@ -80,7 +71,8 @@ You can run this script via `cd public && php -S localhost:8080`. If you open yo
 
 The entrypoint of your cli tools will look something like this.
 
-> **Note** by default if you don't configure any command it will always display `Hello world`.
+> [!NOTE]
+> by default if you don't configure any command it will always display `Hello world`.
 
 ```php
 <?php
