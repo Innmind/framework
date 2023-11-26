@@ -31,7 +31,10 @@ use Innmind\Router\{
     Route,
     Route\Variables,
 };
-use Innmind\Immutable\Maybe;
+use Innmind\Immutable\{
+    Maybe,
+    Sequence,
+};
 
 /**
  * @experimental
@@ -45,8 +48,8 @@ final class Http implements Implementation
     private $map;
     /** @var callable(OperatingSystem, Environment): Builder */
     private $container;
-    /** @var callable(Routes, Container, OperatingSystem, Environment): Routes */
-    private $routes;
+    /** @var Sequence<callable(Routes, Container, OperatingSystem, Environment): Routes> */
+    private Sequence $routes;
     /** @var callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler */
     private $mapRequestHandler;
     /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> */
@@ -57,7 +60,7 @@ final class Http implements Implementation
      *
      * @param callable(OperatingSystem, Environment): array{OperatingSystem, Environment} $map
      * @param callable(OperatingSystem, Environment): Builder $container
-     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $routes
+     * @param Sequence<callable(Routes, Container, OperatingSystem, Environment): Routes> $routes
      * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
      * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> $notFound
      */
@@ -65,7 +68,7 @@ final class Http implements Implementation
         OperatingSystem $os,
         callable $map,
         callable $container,
-        callable $routes,
+        Sequence $routes,
         callable $mapRequestHandler,
         Maybe $notFound,
     ) {
@@ -89,7 +92,7 @@ final class Http implements Implementation
             $os,
             static fn(OperatingSystem $os, Environment $env) => [$os, $env],
             static fn() => Builder::new(),
-            static fn(Routes $routes) => $routes,
+            Sequence::of(),
             static fn(RequestHandler $handler) => $handler,
             $notFound,
         );
@@ -196,17 +199,7 @@ final class Http implements Implementation
             $this->os,
             $this->map,
             $this->container,
-            fn(
-                Routes $routes,
-                Container $container,
-                OperatingSystem $os,
-                Environment $env,
-            ) => $append(
-                ($this->routes)($routes, $container, $os, $env),
-                $container,
-                $os,
-                $env,
-            ),
+            ($this->routes)($append),
             $this->mapRequestHandler,
             $this->notFound,
         );
@@ -260,12 +253,15 @@ final class Http implements Implementation
                 $env = Environment::http($request->environment());
                 [$os, $env] = ($this->map)($os, $env);
                 $container = ($this->container)($os, $env)->build();
-                $routes = ($this->routes)(
-                    Routes::lazy(),
-                    $container,
-                    $os,
-                    $env,
-                );
+                $routes = Sequence::lazyStartingWith($this->routes)
+                    ->flatMap(static fn($routes) => $routes)
+                    ->map(static fn($provide) => $provide(
+                        Routes::lazy(),
+                        $container,
+                        $os,
+                        $env,
+                    ))
+                    ->flatMap(static fn($routes) => $routes->toSequence());
                 $router = new Router(
                     $routes,
                     $this->notFound->map(
