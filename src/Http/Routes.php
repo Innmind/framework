@@ -39,6 +39,14 @@ final class Routes
     }
 
     /**
+     * @param Sequence<Route|Under> $routes
+     */
+    public function append(Sequence $routes): self
+    {
+        return new self($this->routes->append($routes));
+    }
+
+    /**
      * @internal
      *
      * @return Sequence<Route|Under>
