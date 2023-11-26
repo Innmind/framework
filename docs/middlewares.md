@@ -2,7 +2,8 @@
 
 Middlewares are a way to regroup all the configuration you've seen in other topics under a name. This means that you can either group part of your own application undeer a middleware or expose a package for other to use via Packagist.
 
-> **Note** you can search for [`innmind/framework-middlewares` on Packagist](https://packagist.org/providers/innmind/framework-middlewares) for middlewares published by others.
+> **Note**
+> you can search for [`innmind/framework-middlewares` on Packagist](https://packagist.org/providers/innmind/framework-middlewares) for middlewares published by others.
 
 Let's say you have an application that sends emails you could have a middleware that looks like this:
 
