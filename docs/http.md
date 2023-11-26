@@ -94,6 +94,54 @@ new class extends Http {
 
 For simple apps having the whole behaviour next to the route can be ok. But like in this case it can be repetitive, for such case we can specify our behaviours elsewhere: [services](#Services).
 
+## Multiple methods for the same path
+
+For REST apis it is common to implements differents methods for the same path in a CRUD like fashion. To avoid duplicating te template for each route you can regroup your routes like this:
+
+```php
+use Innmind\Framework\{
+    Main\Http,
+    Application,
+    Http\Routes,
+};
+use Innmind\Router\Under;
+use Innmind\Http\{
+    ServerRequest,
+    Method,
+    Response,
+    Response\StatusCode,
+};
+use Innmind\UrlTemplate\Template;
+use Innmind\Filesystem\File\Content;
+
+new class extends Http {
+    protected function configure(Application $app): Application
+    {
+        return $app->appendRoutes(
+            static fn(Routes $routes) => $routes->add(
+                Under::of(Template::of('/some/resource/{id}'))
+                    ->route(Method::get, static fn($route) => $route->handle(
+                        static fn(ServerRequest $request) => Response::of(
+                            StatusCode::ok,
+                            $request->protocolVersion(),
+                            null,
+                            Content::ofString('{"id": 42, "name": "resource"}'),
+                        ),
+                    ))
+                    ->route(Method::delete, static fn($route) => $route->handle(
+                        static fn(ServerRequest $request) => Response::of(
+                            StatusCode::noContent,
+                            $request->protocolVersion(),
+                        ),
+                    ))
+            ),
+        );
+    }
+};
+```
+
+The other advantage to grouping your routes this way is that when a request matches the path but no method is defined then the framework will automatically respond a `405 Method Not Allowed`.
+
 ## Short syntax
 
 The previous shows the default way to declare routes, but for very simple apps it can be a bit verbose. The framework provides a shorter syntax to handle routes:
