@@ -33,5 +33,10 @@ abstract class Http extends Main
         return $this->app->run($request);
     }
 
+    /**
+     * @param Application<ServerRequest, Response> $app
+     *
+     * @return Application<ServerRequest, Response>
+     */
     abstract protected function configure(Application $app): Application;
 }

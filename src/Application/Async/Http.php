@@ -5,6 +5,7 @@ namespace Innmind\Framework\Application\Async;
 
 use Innmind\Framework\{
     Environment,
+    Application\Implementation,
     Http\Routes,
     Http\Router,
     Http\RequestHandler,
@@ -34,8 +35,10 @@ use Innmind\Immutable\Maybe;
 
 /**
  * @experimental
+ * @internal
+ * @implements Implementation<CliEnv, CliEnv>
  */
-final class Http
+final class Http implements Implementation
 {
     private OperatingSystem $os;
     /** @var callable(OperatingSystem, Environment): array{OperatingSystem, Environment} */
@@ -94,8 +97,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(Environment, OperatingSystem): Environment $map
      */
     public function mapEnvironment(callable $map): self
     {
@@ -116,8 +117,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(OperatingSystem, Environment): OperatingSystem $map
      */
     public function mapOperatingSystem(callable $map): self
     {
@@ -138,9 +137,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param non-empty-string $name
-     * @param callable(Container, OperatingSystem, Environment): object $definition
      */
     public function service(string $name, callable $definition): self
     {
@@ -159,9 +155,22 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param literal-string $pattern
-     * @param callable(ServerRequest, Variables, Container, OperatingSystem, Environment): Response $handle
+     */
+    public function command(callable $command): self
+    {
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
+     */
+    public function mapCommand(callable $map): self
+    {
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
      */
     public function route(string $pattern, callable $handle): self
     {
@@ -180,8 +189,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
      */
     public function appendRoutes(callable $append): self
     {
@@ -207,8 +214,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
      */
     public function mapRequestHandler(callable $map): self
     {
@@ -234,8 +239,6 @@ final class Http
 
     /**
      * @psalm-mutation-free
-     *
-     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
      */
     public function notFoundRequestHandler(callable $handle): self
     {
@@ -249,7 +252,7 @@ final class Http
         );
     }
 
-    public function run(CliEnv $env): CliEnv
+    public function run($input)
     {
         $run = Commands::of(Serve::of(
             $this->os,
@@ -280,6 +283,6 @@ final class Http
             },
         ));
 
-        return $run($env);
+        return $run($input);
     }
 }
