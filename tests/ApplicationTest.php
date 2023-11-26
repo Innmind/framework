@@ -18,7 +18,10 @@ use Innmind\CLI\{
     Command,
     Console,
 };
-use Innmind\Router\Route;
+use Innmind\Router\{
+    Route,
+    Under,
+};
 use Innmind\Http\{
     ServerRequest,
     Response,
@@ -1040,6 +1043,36 @@ class ApplicationTest extends TestCase
                 ));
 
                 $this->assertSame($expected, $response);
+            });
+    }
+
+    public function testMatchMethodAllowed()
+    {
+        $this
+            ->forAll(
+                Set\Elements::of(...ProtocolVersion::cases()),
+                Set\Sequence::of(
+                    Set\Composite::immutable(
+                        static fn($key, $value) => [$key, $value],
+                        Set\Randomize::of(Set\Strings::any()),
+                        Set\Strings::any(),
+                    ),
+                )->between(0, 10),
+            )
+            ->then(function($protocol, $variables) {
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->appendRoutes(static fn($routes) => $routes->add(
+                        Under::of(Template::of('/foo'))->route(Method::get),
+                    ));
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::head,
+                    $protocol,
+                ));
+
+                $this->assertSame(405, $response->statusCode()->toInt());
+                $this->assertSame($protocol, $response->protocolVersion());
             });
     }
 }
