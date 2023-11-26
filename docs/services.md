@@ -2,7 +2,7 @@
 
 For both [HTTP](http.md) and [CLI](cli.md) applications a service is an object referenced by a name in a [`Container`](https://github.com/Innmind/DI).
 
-> **Note**
+> [!NOTE]
 > since a container only deals with objects Psalm will complain of type mismatches, so you'll have to suppress those errors (for now).
 
 ## Defining a service
@@ -36,7 +36,7 @@ new class extends Http|Cli {
 
 This example defines a single service named `amqp-client` that relies on the `OperatingSystem` in order to work.
 
-> **Note**
+> [!NOTE]
 > this example uses [`innmind/amqp`](https://github.com/innmind/amqp)
 
 ## Configure via environment variables
