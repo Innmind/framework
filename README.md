@@ -35,12 +35,8 @@ require 'path/to/composer/autoload.php';
 use Innmind\Framework\{
     Main\Http,
     Application,
-    Http\Routes,
 };
-use Innmind\Router\{
-    Route,
-    Route\Variables,
-};
+use Innmind\Router\Route\Variables;
 use Innmind\Http\{
     ServerRequest,
     Response,
@@ -51,25 +47,19 @@ use Innmind\Filesystem\File\Content;
 new class extends Http {
     protected function configure(Application $app): Application
     {
-        return $app->appendRoutes(
-            static fn(Routes $routes) => $routes
-                ->add(Route::literal('GET /')->handle(
-                    static fn(ServerRequest $request) => Response::of(
-                        StatusCode::ok,
-                        $request->protocolVersion(),
-                        null,
-                        Content::ofString('Hello world!'),
-                    ),
-                ))
-                ->add(Route::literal('GET /{name}')->handle(
-                    static fn(ServerRequest $request, Variables $variables) => Response::of(
-                        StatusCode::ok,
-                        $request->protocolVersion(),
-                        null,
-                        Content::ofString("Hello {$variables->get('name')}!"),
-                    ),
-                )),
-        );
+        return $app
+            ->route('GET /', static fn(ServerRequest $request) => Response::of(
+                StatusCode::ok,
+                $request->protocolVersion(),
+                null,
+                Content::ofString('Hello world!'),
+            ))
+            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => Response::of(
+                StatusCode::ok,
+                $request->protocolVersion(),
+                null,
+                Content::ofString("Hello {$variables->get('name')}!"),
+            ));
     }
 };
 ```
