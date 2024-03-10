@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Support for `innmind/operating-system:~5.0`
+- Support for `innmind/async-http-server:~3.0`
+
 ## 2.0.0 - 2023-11-26
 
 ### Added
