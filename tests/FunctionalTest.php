@@ -51,8 +51,16 @@ class FunctionalTest extends TestCase
 
     public function testAsyncHttpServer()
     {
-        // let the server time to boot
-        \usleep(500_000);
+        $started = $this
+            ->server
+            ->output()
+            ->chunks()
+            ->find(static fn($pair) => $pair[0]->startsWith('HTTP server ready!'));
+
+        $this->assertTrue($started->match(
+            static fn() => true,
+            static fn() => false,
+        ));
 
         $error = $this
             ->os
