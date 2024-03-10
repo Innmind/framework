@@ -35,10 +35,7 @@ use Innmind\Url\{
     Path,
 };
 use Innmind\UrlTemplate\Template;
-use Innmind\Immutable\{
-    Map,
-    Str,
-};
+use Innmind\Immutable\Str;
 use Innmind\BlackBox\{
     PHPUnit\BlackBox,
     Set,

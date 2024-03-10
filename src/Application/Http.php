@@ -18,10 +18,7 @@ use Innmind\Http\{
     ServerRequest,
     Response,
 };
-use Innmind\Router\{
-    Route,
-    Route\Variables,
-};
+use Innmind\Router\Route;
 use Innmind\Immutable\{
     Maybe,
     Sequence,

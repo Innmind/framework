@@ -14,10 +14,7 @@ use Innmind\CLI\{
     Environment as CliEnv,
     Commands,
 };
-use Innmind\OperatingSystem\{
-    OperatingSystem,
-    OperatingSystem\Unix,
-};
+use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Async\HttpServer\Command\Serve;
 use Innmind\DI\{
     Container,
@@ -29,7 +26,6 @@ use Innmind\Http\{
 };
 use Innmind\Router\{
     Route,
-    Route\Variables,
 };
 use Innmind\Immutable\{
     Maybe,

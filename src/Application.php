@@ -17,10 +17,7 @@ use Innmind\Http\{
     ServerRequest,
     Response,
 };
-use Innmind\Router\{
-    Route,
-    Route\Variables,
-};
+use Innmind\Router\Route\Variables;
 
 /**
  * @template I of ServerRequest|CliEnv
