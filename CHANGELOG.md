@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.0 - 2024-03-24
+
+### Added
+
+- Support for using enums as a service name
+
 ## 2.1.0 - 2024-03-10
 
 ### Added

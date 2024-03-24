@@ -16,6 +16,7 @@ use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\{
     Builder,
     Container,
+    Service,
 };
 use Innmind\Immutable\{
     Sequence,
@@ -106,7 +107,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
-    public function service(string $name, callable $definition): self
+    public function service(string|Service $name, callable $definition): self
     {
         return new self(
             $this->os,

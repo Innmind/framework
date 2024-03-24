@@ -2,10 +2,53 @@
 
 For both [HTTP](http.md) and [CLI](cli.md) applications a service is an object referenced by a name in a [`Container`](https://github.com/Innmind/DI).
 
-> [!NOTE]
-> since a container only deals with objects Psalm will complain of type mismatches, so you'll have to suppress those errors (for now).
-
 ## Defining a service
+
+```php
+use Innmind\DI\Service;
+use Innmind\AMQP\Client;
+
+/**
+ * @template S of object
+ * @implements Service<S>
+ */
+enum Services implements Service
+{
+    case amqpClient;
+    case producerClient;
+    case consumerClient;
+
+    /**
+     * @return self<Client>
+     */
+    public static function amqpClient(): self
+    {
+        /** @var self<Client> */
+        return self::amqpClient;
+    }
+
+    /**
+     * @return self<Client>
+     */
+    public static function producerClient(): self
+    {
+        /** @var self<Client> */
+        return self::producerClient;
+    }
+
+    /**
+     * @return self<Client>
+     */
+    public static function consumerClient(): self
+    {
+        /** @var self<Client> */
+        return self::consumerClient;
+    }
+}
+```
+
+> [!TIP]
+> If you publish a package you can add an `@internal` flag on the static methods to tell your users to not use the service. And when you plan to remove a service you can use the `@deprecated` flag.
 
 ```php
 use Innmind\Framework\{
@@ -23,7 +66,7 @@ new class extends Http|Cli {
     protected function configure(Application $app): Application
     {
         return $app->service(
-            'amqp-client',
+            Services::amqpClient,
             static fn($_, OperatingSystem $os) => Factory::of($os)->make(
                 Transport::tcp(),
                 Url::of('amqp://guest:guest@localhost:5672/'),
@@ -34,7 +77,7 @@ new class extends Http|Cli {
 };
 ```
 
-This example defines a single service named `amqp-client` that relies on the `OperatingSystem` in order to work.
+This example defines a single service named `amqpClient` that relies on the `OperatingSystem` in order to work.
 
 > [!NOTE]
 > this example uses [`innmind/amqp`](https://github.com/innmind/amqp)
@@ -60,7 +103,7 @@ new class extends Http|Cli {
     protected function configure(Application $app): Application
     {
         return $app->service(
-            'amqp-client',
+            Services::amqpClient,
             static fn($_, OperatingSystem $os, Environment $env) => Factory::of($os)->make(
                 Transport::tcp(),
                 Url::of($env->get('AMQP_URL')), // this will throw if the variable is not defined
@@ -98,12 +141,12 @@ new class extends Http|Cli {
     {
         return $app
             ->service(
-                'producer-client',
+                Services::producerClient,
                 static fn($_, OperatingSystem $os) => Factory::of($os)->make(/* like above */),
             )
             ->service(
-                'consumer-client',
-                static fn(Container $container) => $container('producer-client')->with(
+                Services::consumerClient,
+                static fn(Container $container) => $container(Services::producerClient)->with(
                     Qos::of(10), // prefetch 10 messages
                 ),
             );
@@ -111,4 +154,4 @@ new class extends Http|Cli {
 };
 ```
 
-Now every other service that relies on `consumer-client` will always have a configuration to prefetch 10 messages.
+Now every other service that relies on `consumerClient` will always have a configuration to prefetch 10 messages.
