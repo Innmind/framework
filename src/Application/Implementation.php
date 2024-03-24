@@ -13,7 +13,10 @@ use Innmind\CLI\{
     Environment as CliEnv,
     Command,
 };
-use Innmind\DI\Container;
+use Innmind\DI\{
+    Container,
+    Service,
+};
 use Innmind\Http\{
     ServerRequest,
     Response,
@@ -48,12 +51,12 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
-     * @param non-empty-string $name
+     * @param non-empty-string|Service $name
      * @param callable(Container, OperatingSystem, Environment): object $definition
      *
      * @return self<I, O>
      */
-    public function service(string $name, callable $definition): self;
+    public function service(string|Service $name, callable $definition): self;
 
     /**
      * @psalm-mutation-free

@@ -13,6 +13,7 @@ use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\{
     Container,
     Builder,
+    Service,
 };
 use Innmind\Http\{
     ServerRequest,
@@ -118,7 +119,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
-    public function service(string $name, callable $definition): self
+    public function service(string|Service $name, callable $definition): self
     {
         return new self(
             $this->os,
