@@ -1,6 +1,6 @@
 # Add variables to the environment
 
-The framework exposes an [`Environment`](../src/Environment.php) object with values coming from `\getenv()`. If you want to add variables and make them available to the rest of your application you can do it like this:
+The framework exposes an [`Environment`](https://github.com/Innmind/framework/blob/develop/src/Environment.php) object with values coming from `\getenv()`. If you want to add variables and make them available to the rest of your application you can do it like this:
 
 ```php
 use Innmind\Framework\{
