@@ -13,10 +13,12 @@ use Innmind\Framework\{
 new class extends Http|Cli {
     protected function configure(Application $app): Application
     {
-        return $app->mapEnvironment(static fn(Environment $env) => $env->with(
-            'MY_VARIABLE_NAME',
-            "and it's value",
-        ));
+        return $app->mapEnvironment(
+            static fn(Environment $env) => $env->with(
+                'MY_VARIABLE_NAME',
+                "and it's value",
+            ),
+        );
     }
 };
 ```

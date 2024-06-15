@@ -2,8 +2,8 @@
 
 Middlewares are a way to regroup all the configuration you've seen in other topics under a name. This means that you can either group part of your own application undeer a middleware or expose a package for other to use via Packagist.
 
-> [!NOTE]
-> you can search for [`innmind/framework-middlewares` on Packagist](https://packagist.org/providers/innmind/framework-middlewares) for middlewares published by others.
+!!! note ""
+    You can search for [`innmind/framework-middlewares` on Packagist](https://packagist.org/providers/innmind/framework-middlewares) for middlewares published by others.
 
 Let's say you have an application that sends emails you could have a middleware that looks like this:
 
@@ -31,16 +31,18 @@ final class Emails implements Middleware
         return $app
             ->service(
                 'email-server'
-                static fn($_, $__, Environment $env) => Url::of($env->get('EMAIL_SERVER'))
+                static fn($_, $__, Environment $env) => Url::of(
+                    $env->get('EMAIL_SERVER'),
+                ),
             ),
             ->service(
                 $this->service,
-                static fn(Container $container) => new EmailClient( // imaginary class
+                static fn(Container $container) => new EmailClient( //(1)
                     $container('email-server'),
                 ),
             )
             ->command(
-                static fn(Container $container) => new class($container($this->service)) implements Command {
+                fn(Container $container) => new class($container($this->service)) implements Command {
                     public function __construct(
                         private EmailClient $client,
                     ) {
@@ -62,6 +64,8 @@ final class Emails implements Middleware
     }
 }
 ```
+
+1. imaginary class
 
 And you would use it like this:
 
