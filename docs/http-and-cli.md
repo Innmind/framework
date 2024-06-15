@@ -23,10 +23,12 @@ final class Kernel implements Middleware
         return $app
             ->service(
                 'images',
-                static fn($_, OperatingSystem $os) => $os->filesystem()->mount(Path::of('somewhere/on/the/filesystem/')),
+                static fn($_, OperatingSystem $os) => $os
+                    ->filesystem()
+                    ->mount(Path::of('somewhere/on/the/filesystem/')),
             )
             ->service('amqp', /* see services topic */)
-            ->service('upload', static fn(Container $container) => new UploadHandler( // imaginary class
+            ->service('upload', static fn(Container $container) => new UploadHandler( //(1)
                 $container('images'),
                 $container('amqp'),
             ))
@@ -35,13 +37,16 @@ final class Kernel implements Middleware
                     Route::literal('POST /upload')->handle(Service::of($container, 'upload')),
                 ),
             )
-            ->command(static fn(Container $container) => new ThumbnailWorker( // imaginary class
+            ->command(static fn(Container $container) => new ThumbnailWorker( //(2)
                 $container('images'),
                 $container('amqp'),
             ));
     }
 }
 ```
+
+1. imaginary class
+2. imaginary class
 
 Then you can use this middleware like this:
 

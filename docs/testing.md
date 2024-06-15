@@ -61,7 +61,9 @@ final class AppTest extends TestCase
             ['AMQP_URL', 'amqp://guest:guest@localhost:5672/'],
         ];
         $os = Factory::build(); // or use mocks
-        $app = Application::cli($os, Environment::test($variables))->map(new Kernel);
+        $app = Application::cli($os, Environment::test($variables))->map(
+            new Kernel,
+        );
 
         $environment = $app->run(InMemory::of(
             [], // input chunks

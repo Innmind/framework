@@ -47,8 +47,8 @@ enum Services implements Service
 }
 ```
 
-> [!TIP]
-> If you publish a package you can add an `@internal` flag on the static methods to tell your users to not use the service. And when you plan to remove a service you can use the `@deprecated` flag.
+!!! tip ""
+    If you publish a package you can add an `@internal` flag on the static methods to tell your users to not use the service. And when you plan to remove a service you can use the `@deprecated` flag.
 
 ```php
 use Innmind\Framework\{
@@ -79,8 +79,8 @@ new class extends Http|Cli {
 
 This example defines a single service named `amqpClient` that relies on the `OperatingSystem` in order to work.
 
-> [!NOTE]
-> this example uses [`innmind/amqp`](https://github.com/innmind/amqp)
+!!! note ""
+    This example uses [`innmind/amqp`](https://github.com/innmind/amqp).
 
 ## Configure via environment variables
 
@@ -104,10 +104,14 @@ new class extends Http|Cli {
     {
         return $app->service(
             Services::amqpClient,
-            static fn($_, OperatingSystem $os, Environment $env) => Factory::of($os)->make(
+            static fn(
+                $_,
+                OperatingSystem $os,
+                Environment $env
+            ) => Factory::of($os)->make(
                 Transport::tcp(),
-                Url::of($env->get('AMQP_URL')), // this will throw if the variable is not defined
-                ElapsedPeriod::of($env->maybe('AMQP_TIMEOUT')->match( // in case the variable is not defined it will fallback to a 1000ms timeout
+                Url::of($env->get('AMQP_URL')), //(1)
+                ElapsedPeriod::of($env->maybe('AMQP_TIMEOUT')->match( //(2)
                     static fn($timeout) => (int) $timeout,
                     static fn() => 1000,
                 )),
@@ -116,6 +120,9 @@ new class extends Http|Cli {
     }
 };
 ```
+
+1. this will throw if the variable is not defined
+2. in case the variable is not defined it will fallback to a `1000ms` timeout
 
 ## Services relying on services
 

@@ -80,7 +80,10 @@ new class extends Http {
                     ),
                 ))
                 ->add(Route::literal('GET /{name}')->handle(
-                    static fn(ServerRequest $request, Variables $variables) => Response::of(
+                    static fn(
+                        ServerRequest $request,
+                        Variables $variables,
+                    ) => Response::of(
                         StatusCode::ok,
                         $request->protocolVersion(),
                         null,
@@ -163,18 +166,27 @@ new class extends Http {
     protected function configure(Application $app): Application
     {
         return $app
-            ->route('GET /', static fn(ServerRequest $request) => Response::of(
-                StatusCode::ok,
-                $request->protocolVersion(),
-                null,
-                Content::ofString('Hello world!'),
-            ))
-            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => Response::of(
-                StatusCode::ok,
-                $request->protocolVersion(),
-                null,
-                Content::ofString("Hello {$variables->get('name')}!"),
-            ));
+            ->route(
+                'GET /',
+                static fn(ServerRequest $request) => Response::of(
+                    StatusCode::ok,
+                    $request->protocolVersion(),
+                    null,
+                    Content::ofString('Hello world!'),
+                ),
+            )
+            ->route(
+                'GET /{name}',
+                static fn(
+                    ServerRequest $request,
+                    Variables $variables,
+                ) => Response::of(
+                    StatusCode::ok,
+                    $request->protocolVersion(),
+                    null,
+                    Content::ofString("Hello {$variables->get('name')}!"),
+                ),
+            );
     }
 };
 ```
@@ -224,8 +236,10 @@ new class extends Http {
             ->service(
                 'hello-name',
                 static fn() => new class {
-                    public function __invoke(ServerRequest $request, Variables $variables): Response
-                    {
+                    public function __invoke(
+                        ServerRequest $request,
+                        Variables $variables,
+                    ): Response {
                         return Response::of(
                             StatusCode::ok,
                             $request->protocolVersion(),
@@ -236,8 +250,11 @@ new class extends Http {
                 }
             )
             ->appendRoutes(
-                static fn(Routes $routes, Container $container) => $routes
-                    ->add(Route::literal('GET /')->handle(Service::of($container, 'hello-word'))),
+                static fn(Routes $routes, Container $container) => $routes->add(
+                    Route::literal('GET /')->handle(
+                        Service::of($container, 'hello-word'),
+                    ),
+                ),
             )
             ->route('GET /{name}', To::service('hello-name'));
     }
@@ -246,8 +263,8 @@ new class extends Http {
 
 Here the services are invokable anonymous classes to conform to the callable expected for a `Route` but you can create dedicated classes for each one.
 
-> [!NOTE]
-> Head to the [services topic](services.md) for a more in-depth look of what's possible.
+!!! note ""
+    Head to the [services topic](services.md) for a more in-depth look of what's possible.
 
 ## Executing code on any route
 
@@ -303,8 +320,8 @@ This example will refuse any request that doesn't have an `Authorization` header
 
 You can have multiple calls to `mapRequestHandler` to compose behaviours like an onion.
 
-> [!NOTE]
-> the default request handler is the inner router of the framework, this means that you can completely change the default behaviour of the framework by returning a new request handler that never uses the default one.
+!!! note ""
+    The default request handler is the inner router of the framework, this means that you can completely change the default behaviour of the framework by returning a new request handler that never uses the default one.
 
 ## Handling unknown routes
 
@@ -330,9 +347,11 @@ new class extends Http {
                 StatusCode::notFound,
                 $request->protocolVersion(),
                 null,
-                Content::ofString('Page Not Found!'), // or return something more elaborated such as html
+                Content::ofString('Page Not Found!'), //(1)
             ),
         );
     }
 };
 ```
+
+1. or return something more elaborated such as html

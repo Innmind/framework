@@ -1,6 +1,6 @@
 # Add variables to the environment
 
-The framework exposes an [`Environment`](../src/Environment.php) object with values coming from `\getenv()`. If you want to add variables and make them available to the rest of your application you can do it like this:
+The framework exposes an [`Environment`](https://github.com/Innmind/framework/blob/develop/src/Environment.php) object with values coming from `\getenv()`. If you want to add variables and make them available to the rest of your application you can do it like this:
 
 ```php
 use Innmind\Framework\{
@@ -13,10 +13,12 @@ use Innmind\Framework\{
 new class extends Http|Cli {
     protected function configure(Application $app): Application
     {
-        return $app->mapEnvironment(static fn(Environment $env) => $env->with(
-            'MY_VARIABLE_NAME',
-            "and it's value",
-        ));
+        return $app->mapEnvironment(
+            static fn(Environment $env) => $env->with(
+                'MY_VARIABLE_NAME',
+                "and it's value",
+            ),
+        );
     }
 };
 ```
