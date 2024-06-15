@@ -2,7 +2,7 @@
 
 The first of any CLI app is to create an `entrypoint.php` that you'll call with the `php` command.
 
-```php
+```php title="entrypoint.php"
 <?php
 declare(strict_types = 1);
 
@@ -68,8 +68,12 @@ new class extends Cli {
                         ->with(Publish::one($message)->to('some-exchange'))
                         ->run($console)
                         ->match(
-                            static fn($console) => $console->output(Str::of("Message published\n")),
-                            static fn() => $console->error(Str::of("Something went wrong\n")),
+                            static fn($console) => $console->output(
+                                Str::of("Message published\n"),
+                            ),
+                            static fn() => $console->error(
+                                Str::of("Something went wrong\n"),
+                            ),
                         );
                 }
 
@@ -91,8 +95,12 @@ new class extends Cli {
                         ->with(Get::of('some-queue'))
                         ->run($console)
                         ->match(
-                            static fn($console) => $console->output(Str::of("One message pulled from queue\n")),
-                            static fn() => $console->error(Str::of("Something went wrong\n")),
+                            static fn($console) => $console->output(
+                                Str::of("One message pulled from queue\n"),
+                            ),
+                            static fn() => $console->error(
+                                Str::of("Something went wrong\n"),
+                            ),
                         );
                 }
 
