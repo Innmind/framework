@@ -2,7 +2,7 @@ site_name: Innmind/Framework
 repo_name: Innmind/Framework
 
 nav:
-  - Getting Started: README.md
+  - Getting Started: index.md
 
 theme:
   name: material
