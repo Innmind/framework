@@ -3,6 +3,17 @@ repo_name: Innmind/Framework
 
 nav:
   - Getting Started: index.md
+  - Use cases:
+    - Build an HTTP app: http.md
+    - Build a CLI app: cli.md
+    - Services: services.md
+    - Middlewares: middlewares.md
+    - Build an app that runs through HTTP and CLI: http-and-cli.md
+    - Testing: testing.md
+    - Add variables to the environment: environment.md
+    - Decorate the operating system: operating-system.md
+  - Experimental features:
+    - Using an async http server: experimental/async-server.md
 
 theme:
   name: material
