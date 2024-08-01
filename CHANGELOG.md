@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `Innmind\Framework\Http\To` no longer raise Psalm errors when used as argument to `Framework::route()`
+
 ## 2.2.0 - 2024-03-24
 
 ### Added
