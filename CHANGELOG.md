@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `Innmind\DI\Service` can now be used everywhere a service can be referenced
+
 ### Fixed
 
 - `Innmind\Framework\Http\To` no longer raise Psalm errors when used as argument to `Application::route()`
