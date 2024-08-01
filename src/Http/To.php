@@ -8,15 +8,18 @@ use Innmind\Http\{
     ServerRequest,
     Response,
 };
-use Innmind\DI\Container;
+use Innmind\DI\{
+    Container,
+    Service,
+};
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Router\Route\Variables;
 
 final class To
 {
-    private string $service;
+    private string|Service $service;
 
-    private function __construct(string $service)
+    private function __construct(string|Service $service)
     {
         $this->service = $service;
     }
@@ -35,7 +38,7 @@ final class To
         return $container($this->service)($request, $variables);
     }
 
-    public static function service(string $service): self
+    public static function service(string|Service $service): self
     {
         return new self($service);
     }
