@@ -7,15 +7,18 @@ use Innmind\Http\{
     ServerRequest,
     Response,
 };
-use Innmind\DI\Container;
+use Innmind\DI\{
+    Container,
+    Service as Ref,
+};
 use Innmind\Router\Route\Variables;
 
 final class Service
 {
     private Container $container;
-    private string $service;
+    private string|Ref $service;
 
-    private function __construct(Container $container, string $service)
+    private function __construct(Container $container, string|Ref $service)
     {
         $this->container = $container;
         $this->service = $service;
@@ -30,7 +33,7 @@ final class Service
         return ($this->container)($this->service)($request, $variables);
     }
 
-    public static function of(Container $container, string $service): self
+    public static function of(Container $container, string|Ref $service): self
     {
         return new self($container, $service);
     }
