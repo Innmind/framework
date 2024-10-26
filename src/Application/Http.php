@@ -121,10 +121,12 @@ final class Http implements Implementation
      */
     public function service(string|Service $name, callable $definition): self
     {
+        $container = $this->container;
+
         return new self(
             $this->os,
             $this->env,
-            fn(OperatingSystem $os, Environment $env) => ($this->container)($os, $env)->add(
+            static fn(OperatingSystem $os, Environment $env) => $container($os, $env)->add(
                 $name,
                 static fn($service) => $definition($service, $os, $env),
             ),
@@ -188,18 +190,20 @@ final class Http implements Implementation
      */
     public function mapRequestHandler(callable $map): self
     {
+        $previous = $this->mapRequestHandler;
+
         return new self(
             $this->os,
             $this->env,
             $this->container,
             $this->routes,
-            fn(
+            static fn(
                 RequestHandler $handler,
                 Container $container,
                 OperatingSystem $os,
                 Environment $env,
             ) => $map(
-                ($this->mapRequestHandler)($handler, $container, $os, $env),
+                $previous($handler, $container, $os, $env),
                 $container,
                 $os,
                 $env,
@@ -226,23 +230,25 @@ final class Http implements Implementation
     public function run($input)
     {
         $container = ($this->container)($this->os, $this->env)->build();
+        $os = $this->os;
+        $env = $this->env;
         $routes = Sequence::lazyStartingWith($this->routes)
             ->flatMap(static fn($routes) => $routes)
-            ->map(fn($provide) => $provide(
+            ->map(static fn($provide) => $provide(
                 Routes::lazy(),
                 $container,
-                $this->os,
-                $this->env,
+                $os,
+                $env,
             ))
             ->flatMap(static fn($routes) => $routes->toSequence());
         $router = new Router(
             $routes,
             $this->notFound->map(
-                fn($handle) => fn(ServerRequest $request) => $handle(
+                static fn($handle) => static fn(ServerRequest $request) => $handle(
                     $request,
                     $container,
-                    $this->os,
-                    $this->env,
+                    $os,
+                    $env,
                 ),
             ),
         );
