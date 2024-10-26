@@ -100,10 +100,12 @@ final class Http implements Implementation
      */
     public function mapEnvironment(callable $map): self
     {
+        $previous = $this->map;
+
         return new self(
             $this->os,
-            function(OperatingSystem $os, Environment $env) use ($map): array {
-                [$os, $env] = ($this->map)($os, $env);
+            static function(OperatingSystem $os, Environment $env) use ($previous, $map): array {
+                [$os, $env] = $previous($os, $env);
                 $env = $map($env, $os);
 
                 return [$os, $env];
@@ -120,10 +122,12 @@ final class Http implements Implementation
      */
     public function mapOperatingSystem(callable $map): self
     {
+        $previous = $this->map;
+
         return new self(
             $this->os,
-            function(OperatingSystem $os, Environment $env) use ($map): array {
-                [$os, $env] = ($this->map)($os, $env);
+            static function(OperatingSystem $os, Environment $env) use ($previous, $map): array {
+                [$os, $env] = $previous($os, $env);
                 $os = $map($os, $env);
 
                 return [$os, $env];
@@ -140,10 +144,12 @@ final class Http implements Implementation
      */
     public function service(string|Service $name, callable $definition): self
     {
+        $container = $this->container;
+
         return new self(
             $this->os,
             $this->map,
-            fn(OperatingSystem $os, Environment $env) => ($this->container)($os, $env)->add(
+            static fn(OperatingSystem $os, Environment $env) => $container($os, $env)->add(
                 $name,
                 static fn($service) => $definition($service, $os, $env),
             ),
@@ -207,18 +213,20 @@ final class Http implements Implementation
      */
     public function mapRequestHandler(callable $map): self
     {
+        $previous = $this->mapRequestHandler;
+
         return new self(
             $this->os,
             $this->map,
             $this->container,
             $this->routes,
-            fn(
+            static fn(
                 RequestHandler $handler,
                 Container $container,
                 OperatingSystem $os,
                 Environment $env,
             ) => $map(
-                ($this->mapRequestHandler)($handler, $container, $os, $env),
+                $previous($handler, $container, $os, $env),
                 $container,
                 $os,
                 $env,
@@ -244,13 +252,25 @@ final class Http implements Implementation
 
     public function run($input)
     {
+        $map = $this->map;
+        $container = $this->container;
+        $routes = $this->routes;
+        $notFound = $this->notFound;
+        $mapRequestHandler = $this->mapRequestHandler;
+
         $run = Commands::of(Serve::of(
             $this->os,
-            function(ServerRequest $request, OperatingSystem $os): Response {
+            static function(ServerRequest $request, OperatingSystem $os) use (
+                $map,
+                $container,
+                $routes,
+                $notFound,
+                $mapRequestHandler,
+            ): Response {
                 $env = Environment::http($request->environment());
-                [$os, $env] = ($this->map)($os, $env);
-                $container = ($this->container)($os, $env)->build();
-                $routes = Sequence::lazyStartingWith($this->routes)
+                [$os, $env] = $map($os, $env);
+                $container = $container($os, $env)->build();
+                $routes = Sequence::lazyStartingWith($routes)
                     ->flatMap(static fn($routes) => $routes)
                     ->map(static fn($provide) => $provide(
                         Routes::lazy(),
@@ -261,7 +281,7 @@ final class Http implements Implementation
                     ->flatMap(static fn($routes) => $routes->toSequence());
                 $router = new Router(
                     $routes,
-                    $this->notFound->map(
+                    $notFound->map(
                         static fn($handle) => static fn(ServerRequest $request) => $handle(
                             $request,
                             $container,
@@ -270,7 +290,7 @@ final class Http implements Implementation
                         ),
                     ),
                 );
-                $handle = ($this->mapRequestHandler)($router, $container, $os, $env);
+                $handle = $mapRequestHandler($router, $container, $os, $env);
 
                 return $handle($request);
             },

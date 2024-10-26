@@ -109,10 +109,12 @@ final class Cli implements Implementation
      */
     public function service(string|Service $name, callable $definition): self
     {
+        $container = $this->container;
+
         return new self(
             $this->os,
             $this->env,
-            fn(OperatingSystem $os, Environment $env) => ($this->container)($os, $env)->add(
+            static fn(OperatingSystem $os, Environment $env) => $container($os, $env)->add(
                 $name,
                 static fn($service) => $definition($service, $os, $env),
             ),
@@ -144,18 +146,20 @@ final class Cli implements Implementation
      */
     public function mapCommand(callable $map): self
     {
+        $previous = $this->mapCommand;
+
         return new self(
             $this->os,
             $this->env,
             $this->container,
             $this->commands,
-            fn(
+            static fn(
                 Command $command,
                 Container $service,
                 OperatingSystem $os,
                 Environment $env,
             ) => $map(
-                ($this->mapCommand)($command, $service, $os, $env),
+                $previous($command, $service, $os, $env),
                 $service,
                 $os,
                 $env,
@@ -198,11 +202,14 @@ final class Cli implements Implementation
     public function run($input)
     {
         $container = ($this->container)($this->os, $this->env)->build();
-        $mapCommand = fn(Command $command): Command => ($this->mapCommand)(
+        $mapCommand = $this->mapCommand;
+        $os = $this->os;
+        $env = $this->env;
+        $mapCommand = static fn(Command $command): Command => $mapCommand(
             $command,
             $container,
-            $this->os,
-            $this->env,
+            $os,
+            $env,
         );
         $commands = $this->commands->map(static fn($service) => new Defer(
             $service,

@@ -30,14 +30,16 @@ final class LoadDotEnv implements Middleware
 
     public function __invoke(Application $app): Application
     {
+        $folder = $this->folder;
+
         return $app->mapEnvironment(
-            fn($env, $os) => $os
+            static fn($env, $os) => $os
                 ->filesystem()
-                ->mount($this->folder)
+                ->mount($folder)
                 ->get(Name::of('.env'))
                 ->keep(Instance::of(File::class))
                 ->match(
-                    fn($file) => $this->add($env, $file),
+                    static fn($file) => self::add($env, $file),
                     static fn() => $env,
                 ),
         );
@@ -48,7 +50,7 @@ final class LoadDotEnv implements Middleware
         return new self($folder);
     }
 
-    private function add(Environment $env, File $file): Environment
+    private static function add(Environment $env, File $file): Environment
     {
         /** @psalm-suppress InvalidArgument Due to the empty sequence in the flatMap */
         return $file
