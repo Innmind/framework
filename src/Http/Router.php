@@ -41,10 +41,11 @@ final class Router implements RequestHandler
     public function __invoke(ServerRequest $request): Response
     {
         $match = new RequestMatcher($this->routes);
+        $notFound = $this->notFound;
 
         return $match($request)
             ->map(static fn($route) => $route->respondTo(...))
-            ->otherwise(fn() => $this->notFound)
+            ->otherwise(static fn() => $notFound)
             ->match(
                 static fn($handle) => $handle($request),
                 static fn() => Response::of(
