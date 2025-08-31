@@ -40,7 +40,7 @@ final class Optional implements Middleware
      * @param class-string<Middleware> $middleware
      * @param callable(): Middleware $factory
      */
-    public static function of(string $middleware, callable $factory = null): self
+    public static function of(string $middleware, ?callable $factory = null): self
     {
         return new self(
             $middleware,

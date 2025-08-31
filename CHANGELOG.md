@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- PHP `8.4` deprecations
+
 ## 2.3.1 - 2024-10-26
 
 ### Changed
