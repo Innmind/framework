@@ -38,12 +38,12 @@
     },
     "require-dev": {
         "vimeo/psalm": "~5.6",
-        "innmind/black-box": "~5.5",
+        "innmind/black-box": "~6.5",
         "innmind/coding-standard": "~2.0",
         "innmind/async-http-server": "~2.0|~3.0"
     },
     "conflict": {
-        "innmind/black-box": "<5.0|~6.0",
+        "innmind/black-box": "<6.0|~7.0",
         "innmind/async-http-server": "<2.0|~4.0"
     },
     "suggest": {
