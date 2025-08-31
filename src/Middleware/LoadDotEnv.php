@@ -34,7 +34,8 @@ final class LoadDotEnv implements Middleware
             static fn($env, $os) => $os
                 ->filesystem()
                 ->mount($folder)
-                ->get(Name::of('.env'))
+                ->maybe()
+                ->flatMap(static fn($adapter) => $adapter->get(Name::of('.env')))
                 ->keep(Instance::of(File::class))
                 ->match(
                     static fn($file) => self::add($env, $file),

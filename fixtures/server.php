@@ -8,14 +8,23 @@ use Innmind\Framework\{
     Main\Async\Http,
     Http\Routes,
 };
-use Innmind\Router\Route;
+use Innmind\Router\{
+    Method,
+    Endpoint,
+    Handle,
+    Respond,
+};
+use Innmind\Http\Response\StatusCode;
+use Innmind\Immutable\Attempt;
 
 new class extends Http
 {
     protected function configure(Application $app): Application
     {
         return $app->appendRoutes(static fn($routes) => $routes->add(
-            Route::literal('GET /hello'),
+            Method::get()
+                ->pipe(Endpoint::of('/hello'))
+                ->pipe(Respond::with(StatusCode::ok)),
         ));
     }
 };

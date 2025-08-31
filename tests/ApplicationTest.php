@@ -16,12 +16,14 @@ use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
     Environment\InMemory,
     Command,
+    Command\Usage,
     Console,
 };
 use Innmind\DI\Service;
 use Innmind\Router\{
-    Route,
-    Under,
+    Endpoint,
+    Method as RouterMethod,
+    Handle,
 };
 use Innmind\Http\{
     ServerRequest,
@@ -31,12 +33,15 @@ use Innmind\Http\{
     ProtocolVersion,
     Header\ContentType,
 };
+use Innmind\MediaType\MediaType;
 use Innmind\Url\{
     Url,
     Path,
 };
-use Innmind\UrlTemplate\Template;
-use Innmind\Immutable\Str;
+use Innmind\Immutable\{
+    Str,
+    Attempt,
+};
 use Innmind\BlackBox\{
     PHPUnit\BlackBox,
     Set,
@@ -80,7 +85,7 @@ class ApplicationTest extends TestCase
                     $arguments,
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(["Hello world\n"], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -122,7 +127,7 @@ class ApplicationTest extends TestCase
                     $arguments,
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
@@ -148,7 +153,7 @@ class ApplicationTest extends TestCase
                     $arguments,
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
@@ -174,14 +179,14 @@ class ApplicationTest extends TestCase
             ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command';
+                            return Usage::parse('my-command');
                         }
                     });
 
@@ -191,7 +196,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -218,25 +223,25 @@ class ApplicationTest extends TestCase
             ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command A output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-a';
+                            return Usage::parse('my-command-a');
                         }
                     })
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command B output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-b';
+                            return Usage::parse('my-command-b');
                         }
                     });
 
@@ -246,7 +251,7 @@ class ApplicationTest extends TestCase
                     ['script-name', 'my-command-a'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command A output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -260,7 +265,7 @@ class ApplicationTest extends TestCase
                     ['script-name', 'my-command-b'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command B output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -295,7 +300,7 @@ class ApplicationTest extends TestCase
                     $arguments,
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(["Hello world\n"], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -327,14 +332,14 @@ class ApplicationTest extends TestCase
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output($this->output);
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command';
+                            return Usage::parse('my-command');
                         }
                     })
                     ->service(Services::service, static fn() => Str::of('my command output'));
@@ -345,7 +350,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -377,14 +382,14 @@ class ApplicationTest extends TestCase
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output($this->output);
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command';
+                            return Usage::parse('my-command');
                         }
                     })
                     ->service(Services::serviceA, static fn($get) => Str::of('my command output')->append($get(Services::serviceB)->toString()))
@@ -396,7 +401,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output twice'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -423,14 +428,14 @@ class ApplicationTest extends TestCase
             ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command A output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-a';
+                            return Usage::parse('my-command-a');
                         }
                     })
                     ->command(static fn() => new class implements Command {
@@ -439,14 +444,14 @@ class ApplicationTest extends TestCase
                             throw new \Exception;
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command B output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-b';
+                            return Usage::parse('my-command-b');
                         }
                     });
 
@@ -456,7 +461,7 @@ class ApplicationTest extends TestCase
                     ['script-name', 'my-command-a'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command A output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -483,14 +488,14 @@ class ApplicationTest extends TestCase
             ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command';
+                            return Usage::parse('my-command');
                         }
                     })
                     ->mapCommand(static fn($command) => new class($command) implements Command {
@@ -499,12 +504,14 @@ class ApplicationTest extends TestCase
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
-                            return ($this->inner)($console)->output(Str::of('decorated'));
+                            return ($this->inner)($console)->flatMap(
+                                static fn($console) => $console->output(Str::of('decorated')),
+                            );
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
                             return $this->inner->usage();
                         }
@@ -516,7 +523,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output', 'decorated'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -545,25 +552,25 @@ class ApplicationTest extends TestCase
                 ++$testRuns;
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command output A'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-a';
+                            return Usage::parse('my-command-a');
                         }
                     })
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command output B'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-b';
+                            return Usage::parse('my-command-b');
                         }
                     })
                     ->mapCommand(static fn($command) => new class($command) implements Command {
@@ -575,12 +582,14 @@ class ApplicationTest extends TestCase
                             $this->instances = ++$instances;
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
-                            return ($this->inner)($console)->output(Str::of((string) $this->instances));
+                            return ($this->inner)($console)->flatMap(
+                                fn($console) => $console->output(Str::of((string) $this->instances)),
+                            );
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
                             return $this->inner->usage();
                         }
@@ -592,7 +601,7 @@ class ApplicationTest extends TestCase
                     ['script-name', 'my-command-b'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output B', (string) $testRuns], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -654,17 +663,17 @@ class ApplicationTest extends TestCase
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console
                                 ->output(Str::of($this->env->get('foo')))
-                                ->output(Str::of($this->env->get('bar')))
-                                ->output(Str::of($this->env->get('baz')));
+                                ->flatMap(fn($console) => $console->output(Str::of($this->env->get('bar'))))
+                                ->flatMap(fn($console) => $console->output(Str::of($this->env->get('baz'))));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'watev';
+                            return Usage::parse('watev');
                         }
                     });
 
@@ -674,7 +683,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['bar', 'baz', 'foo'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -715,14 +724,14 @@ class ApplicationTest extends TestCase
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of($this->env->get('foo')));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'watev';
+                            return Usage::parse('watev');
                         }
                     });
 
@@ -732,7 +741,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['bar'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -765,16 +774,16 @@ class ApplicationTest extends TestCase
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console
                                 ->output(Str::of($this->env->get('FOO')))
-                                ->output(Str::of($this->env->get('PASSWORD')));
+                                ->flatMap(fn($console) => $console->output(Str::of($this->env->get('PASSWORD'))));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'watev';
+                            return Usage::parse('watev');
                         }
                     });
 
@@ -784,7 +793,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['bar', 'foo=" \n watev; bar!'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -842,18 +851,22 @@ class ApplicationTest extends TestCase
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
                     ->appendRoutes(fn($routes) => $routes->add(
-                        Route::of(Method::get, Template::of('/foo'))->handle(function($request) use ($protocol, $responseA) {
-                            $this->assertSame($protocol, $request->protocolVersion());
+                        RouterMethod::get()
+                            ->pipe(Endpoint::of('/foo'))
+                            ->pipe(Handle::via(function($request) use ($protocol, $responseA) {
+                                $this->assertSame($protocol, $request->protocolVersion());
 
-                            return $responseA;
-                        }),
+                                return Attempt::result($responseA);
+                            })),
                     ))
                     ->appendRoutes(fn($routes) => $routes->add(
-                        Route::of(Method::get, Template::of('/bar'))->handle(function($request) use ($protocol, $responseB) {
-                            $this->assertSame($protocol, $request->protocolVersion());
+                        RouterMethod::get()
+                            ->pipe(Endpoint::of('/bar'))
+                            ->pipe(Handle::via(function($request) use ($protocol, $responseB) {
+                                $this->assertSame($protocol, $request->protocolVersion());
 
-                            return $responseB;
-                        }),
+                                return Attempt::result($responseB);
+                            })),
                     ));
 
                 $response = $app->run(ServerRequest::of(
@@ -892,16 +905,16 @@ class ApplicationTest extends TestCase
                 $responseB = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->route('GET /foo', function($request) use ($protocol, $responseA) {
+                    ->route('GET /foo', fn() => Handle::via(function($request) use ($protocol, $responseA) {
                         $this->assertSame($protocol, $request->protocolVersion());
 
-                        return $responseA;
-                    })
-                    ->route('GET /bar', function($request) use ($protocol, $responseB) {
+                        return Attempt::result($responseA);
+                    }))
+                    ->route('GET /bar', fn() => Handle::via(function($request) use ($protocol, $responseB) {
                         $this->assertSame($protocol, $request->protocolVersion());
 
-                        return $responseB;
-                    });
+                        return Attempt::result($responseB);
+                    }));
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
@@ -946,7 +959,7 @@ class ApplicationTest extends TestCase
 
                         public function __invoke()
                         {
-                            return $this->response;
+                            return Attempt::result($this->response);
                         }
                     });
 
@@ -990,7 +1003,10 @@ class ApplicationTest extends TestCase
                             return Response::of(
                                 $response->statusCode(),
                                 $response->protocolVersion(),
-                                $response->headers()(ContentType::of('application', 'octet-stream')),
+                                $response->headers()(ContentType::of(new MediaType(
+                                    'application',
+                                    'octet-stream',
+                                ))),
                             );
                         }
                     });
@@ -1064,7 +1080,14 @@ class ApplicationTest extends TestCase
             ->prove(function($protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables))
                     ->appendRoutes(static fn($routes) => $routes->add(
-                        Under::of(Template::of('/foo'))->route(Method::get),
+                        Endpoint::of('/foo')
+                            ->pipe(RouterMethod::get())
+                            ->pipe(Handle::of(static fn($request) => Attempt::result(
+                                Response::of(
+                                    StatusCode::ok,
+                                    $request->protocolVersion(),
+                                ),
+                            ))),
                     ));
 
                 $response = $app->run(ServerRequest::of(

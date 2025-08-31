@@ -8,12 +8,13 @@ use Innmind\Http\{
     Response,
 };
 use Innmind\CLI\Environment as CliEnv;
+use Innmind\Immutable\Attempt;
 
 interface Middleware
 {
     /**
      * @template I of ServerRequest|CliEnv
-     * @template O of Response|CliEnv
+     * @template O of Response|Attempt<CliEnv>
      *
      * @param Application<I, O> $app
      *

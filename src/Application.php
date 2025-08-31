@@ -16,15 +16,19 @@ use Innmind\DI\{
     Container,
     Service,
 };
+use Innmind\Router\Component;
 use Innmind\Http\{
     ServerRequest,
     Response,
 };
-use Innmind\Router\Route\Variables;
+use Innmind\Immutable\{
+    Attempt,
+    SideEffect,
+};
 
 /**
  * @template I of ServerRequest|CliEnv
- * @template O of Response|CliEnv
+ * @template O of Response|Attempt<CliEnv>
  */
 final class Application
 {
@@ -51,7 +55,7 @@ final class Application
     /**
      * @psalm-pure
      *
-     * @return self<CliEnv, CliEnv>
+     * @return self<CliEnv, Attempt<CliEnv>>
      */
     public static function cli(OperatingSystem $os, Environment $env): self
     {
@@ -62,7 +66,7 @@ final class Application
      * @psalm-pure
      * @experimental
      *
-     * @return self<CliEnv, CliEnv>
+     * @return self<CliEnv, Attempt<CliEnv>>
      */
     public static function asyncHttp(OperatingSystem $os): self
     {
@@ -144,7 +148,7 @@ final class Application
      * @psalm-mutation-free
      *
      * @param literal-string $pattern
-     * @param callable(ServerRequest, Variables, Container, OperatingSystem, Environment): Response $handle
+     * @param callable(Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */
@@ -194,7 +198,7 @@ final class Application
      *
      * @return O
      */
-    public function run(CliEnv|ServerRequest $input): CliEnv|Response
+    public function run(CliEnv|ServerRequest $input): Attempt|Response
     {
         return $this->app->run($input);
     }

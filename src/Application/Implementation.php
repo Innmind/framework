@@ -17,16 +17,20 @@ use Innmind\DI\{
     Container,
     Service,
 };
+use Innmind\Router\Component;
 use Innmind\Http\{
     ServerRequest,
     Response,
 };
-use Innmind\Router\Route\Variables;
+use Innmind\Immutable\{
+    Attempt,
+    SideEffect,
+};
 
 /**
  * @internal
  * @template I of ServerRequest|CliEnv
- * @template O of Response|CliEnv
+ * @template O of Response|Attempt<CliEnv>
  */
 interface Implementation
 {
@@ -79,7 +83,7 @@ interface Implementation
      * @psalm-mutation-free
      *
      * @param literal-string $pattern
-     * @param callable(ServerRequest, Variables, Container, OperatingSystem, Environment): Response $handle
+     * @param callable(Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */

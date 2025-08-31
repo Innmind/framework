@@ -9,6 +9,7 @@ use Innmind\CLI\{
     Environment,
 };
 use Innmind\OperatingSystem\OperatingSystem;
+use Innmind\Immutable\Attempt;
 
 /**
  * @experimental
@@ -16,19 +17,19 @@ use Innmind\OperatingSystem\OperatingSystem;
 abstract class Http extends Main
 {
     #[\Override]
-    protected function main(Environment $env, OperatingSystem $os): Environment
+    protected function main(Environment $env, OperatingSystem $os): Attempt
     {
         /**
          * @psalm-suppress InvalidReturnStatement Let the app crash in case of a misuse
-         * @var Environment
+         * @var Attempt<Environment>
          */
         return static::configure(Application::asyncHttp($os))->run($env);
     }
 
     /**
-     * @param Application<Environment, Environment> $app
+     * @param Application<Environment, Attempt<Environment>> $app
      *
-     * @return Application<Environment, Environment>
+     * @return Application<Environment, Attempt<Environment>>
      */
     abstract protected function configure(Application $app): Application;
 }

@@ -21,11 +21,12 @@ use Innmind\DI\{
 use Innmind\Immutable\{
     Sequence,
     Str,
+    Attempt,
 };
 
 /**
  * @internal
- * @implements Implementation<CliEnv, CliEnv>
+ * @implements Implementation<CliEnv, Attempt<CliEnv>>
  */
 final class Cli implements Implementation
 {

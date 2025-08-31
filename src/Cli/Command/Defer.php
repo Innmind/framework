@@ -6,10 +6,12 @@ namespace Innmind\Framework\Cli\Command;
 use Innmind\Framework\Environment;
 use Innmind\CLI\{
     Command,
+    Command\Usage,
     Console,
 };
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\Container;
+use Innmind\Immutable\Attempt;
 
 /**
  * @internal
@@ -32,7 +34,7 @@ final class Defer implements Command
     }
 
     #[\Override]
-    public function __invoke(Console $console): Console
+    public function __invoke(Console $console): Attempt
     {
         // we map the command when running it instead of when loading it to
         // avoid loading the decorator multiple times for a same script as
@@ -47,7 +49,7 @@ final class Defer implements Command
      * @psalm-mutation-free
      */
     #[\Override]
-    public function usage(): string
+    public function usage(): Usage
     {
         /** @psalm-suppress ImpureMethodCall */
         return $this->command()->usage();
