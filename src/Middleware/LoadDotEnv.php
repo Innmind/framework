@@ -21,11 +21,8 @@ use Innmind\Immutable\{
 
 final class LoadDotEnv implements Middleware
 {
-    private Path $folder;
-
-    private function __construct(Path $folder)
+    private function __construct(private Path $folder)
     {
-        $this->folder = $folder;
     }
 
     #[\Override]
