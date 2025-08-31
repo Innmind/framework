@@ -23,19 +23,14 @@ use Innmind\Immutable\{
  */
 final class Router implements RequestHandler
 {
-    /** @var Sequence<Route|Under> */
-    private Sequence $routes;
-    /** @var Maybe<\Closure(ServerRequest): Response> */
-    private Maybe $notFound;
-
     /**
      * @param Sequence<Route|Under> $routes
      * @param Maybe<\Closure(ServerRequest): Response> $notFound
      */
-    public function __construct(Sequence $routes, Maybe $notFound)
-    {
-        $this->routes = $routes;
-        $this->notFound = $notFound;
+    public function __construct(
+        private Sequence $routes,
+        private Maybe $notFound,
+    ) {
     }
 
     #[\Override]

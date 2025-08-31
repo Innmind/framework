@@ -15,15 +15,11 @@ use Innmind\Immutable\{
  */
 final class Environment
 {
-    /** @var Map<string, string> */
-    private Map $variables;
-
     /**
      * @param Map<string, string> $variables
      */
-    private function __construct(Map $variables)
+    private function __construct(private Map $variables)
     {
-        $this->variables = $variables;
     }
 
     /**

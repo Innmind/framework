@@ -16,31 +16,19 @@ use Innmind\DI\Container;
  */
 final class Defer implements Command
 {
-    /** @var callable(Container, OperatingSystem, Environment): Command */
-    private $build;
-    private Container $locate;
-    private OperatingSystem $os;
-    private Environment $env;
-    /** @var callable(Command): Command */
-    private $map;
     private ?Command $command = null;
 
     /**
-     * @param callable(Container, OperatingSystem, Environment): Command $build
-     * @param callable(Command): Command $map
+     * @param \Closure(Container, OperatingSystem, Environment): Command $build
+     * @param \Closure(Command): Command $map
      */
     public function __construct(
-        callable $build,
-        Container $locate,
-        OperatingSystem $os,
-        Environment $env,
-        callable $map,
+        private \Closure $build,
+        private Container $locate,
+        private OperatingSystem $os,
+        private Environment $env,
+        private \Closure $map,
     ) {
-        $this->build = $build;
-        $this->locate = $locate;
-        $this->os = $os;
-        $this->env = $env;
-        $this->map = $map;
     }
 
     #[\Override]

@@ -29,34 +29,20 @@ use Innmind\Immutable\{
  */
 final class Cli implements Implementation
 {
-    private OperatingSystem $os;
-    private Environment $env;
-    /** @var callable(OperatingSystem, Environment): Builder */
-    private $container;
-    /** @var Sequence<callable(Container, OperatingSystem, Environment): Command> */
-    private Sequence $commands;
-    /** @var callable(Command, Container, OperatingSystem, Environment): Command */
-    private $mapCommand;
-
     /**
      * @psalm-mutation-free
      *
-     * @param callable(OperatingSystem, Environment): Builder $container
+     * @param \Closure(OperatingSystem, Environment): Builder $container
      * @param Sequence<callable(Container, OperatingSystem, Environment): Command> $commands
-     * @param callable(Command, Container, OperatingSystem, Environment): Command $mapCommand
+     * @param \Closure(Command, Container, OperatingSystem, Environment): Command $mapCommand
      */
     private function __construct(
-        OperatingSystem $os,
-        Environment $env,
-        callable $container,
-        Sequence $commands,
-        callable $mapCommand,
+        private OperatingSystem $os,
+        private Environment $env,
+        private \Closure $container,
+        private Sequence $commands,
+        private \Closure $mapCommand,
     ) {
-        $this->os = $os;
-        $this->env = $env;
-        $this->container = $container;
-        $this->commands = $commands;
-        $this->mapCommand = $mapCommand;
     }
 
     /**
@@ -217,7 +203,7 @@ final class Cli implements Implementation
             $env,
         );
         $commands = $this->commands->map(static fn($command) => new Defer(
-            $command,
+            \Closure::fromCallable($command),
             $container,
             $os,
             $env,

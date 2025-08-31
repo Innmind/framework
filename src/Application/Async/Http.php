@@ -40,41 +40,23 @@ use Innmind\Immutable\{
  */
 final class Http implements Implementation
 {
-    private OperatingSystem $os;
-    /** @var callable(OperatingSystem, Environment): array{OperatingSystem, Environment} */
-    private $map;
-    /** @var callable(OperatingSystem, Environment): Builder */
-    private $container;
-    /** @var Sequence<callable(Routes, Container, OperatingSystem, Environment): Routes> */
-    private Sequence $routes;
-    /** @var callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler */
-    private $mapRequestHandler;
-    /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> */
-    private Maybe $notFound;
-
     /**
      * @psalm-mutation-free
      *
-     * @param callable(OperatingSystem, Environment): array{OperatingSystem, Environment} $map
-     * @param callable(OperatingSystem, Environment): Builder $container
+     * @param \Closure(OperatingSystem, Environment): array{OperatingSystem, Environment} $map
+     * @param \Closure(OperatingSystem, Environment): Builder $container
      * @param Sequence<callable(Routes, Container, OperatingSystem, Environment): Routes> $routes
-     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
+     * @param \Closure(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
      * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> $notFound
      */
     private function __construct(
-        OperatingSystem $os,
-        callable $map,
-        callable $container,
-        Sequence $routes,
-        callable $mapRequestHandler,
-        Maybe $notFound,
+        private OperatingSystem $os,
+        private \Closure $map,
+        private \Closure $container,
+        private Sequence $routes,
+        private \Closure $mapRequestHandler,
+        private Maybe $notFound,
     ) {
-        $this->os = $os;
-        $this->map = $map;
-        $this->container = $container;
-        $this->routes = $routes;
-        $this->mapRequestHandler = $mapRequestHandler;
-        $this->notFound = $notFound;
     }
 
     /**
