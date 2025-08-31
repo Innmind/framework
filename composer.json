@@ -16,14 +16,8 @@
     },
     "require": {
         "php": "~8.2",
-        "innmind/operating-system": "~4.1|~5.0",
-        "innmind/cli": "^3.1",
-        "innmind/immutable": "~5.2",
-        "innmind/di": "~2.1",
-        "innmind/url": "^4.1",
-        "innmind/filesystem": "~7.0",
-        "innmind/http-server": "~4.0",
-        "innmind/router": "~4.1"
+        "innmind/foundation": "~1.9",
+        "innmind/di": "~3.0"
     },
     "autoload": {
         "psr-4": {
@@ -39,11 +33,11 @@
         "innmind/static-analysis": "^1.2.1",
         "innmind/black-box": "~6.5",
         "innmind/coding-standard": "~2.0",
-        "innmind/async-http-server": "~2.0|~3.0"
+        "innmind/async-http-server": "~4.0"
     },
     "conflict": {
         "innmind/black-box": "<6.0|~7.0",
-        "innmind/async-http-server": "<2.0|~4.0"
+        "innmind/async-http-server": "<3.0|~5.0"
     },
     "suggest": {
         "innmind/black-box": "For property based testing",

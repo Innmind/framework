@@ -4,16 +4,16 @@ declare(strict_types = 1);
 namespace Innmind\Framework\Http;
 
 use Innmind\Framework\Environment;
-use Innmind\Http\{
-    ServerRequest,
-    Response,
-};
+use Innmind\Http\Response;
 use Innmind\DI\{
     Container,
     Service,
 };
 use Innmind\OperatingSystem\OperatingSystem;
-use Innmind\Router\Route\Variables;
+use Innmind\Router\{
+    Component,
+    Handle,
+};
 
 final class To
 {
@@ -21,18 +21,24 @@ final class To
     {
     }
 
+    /**
+     * @return Component<mixed, Response>
+     */
     public function __invoke(
-        ServerRequest $request,
-        Variables $variables,
         Container $container,
-        ?OperatingSystem $os = null, // these arguments are not used, there here
-        ?Environment $env = null, // to satisfy Psalm when used in Framework::route()
-    ): Response {
+        OperatingSystem $os,
+        Environment $env,
+    ): Component {
+        $service = $this->service;
+
         /**
-         * @psalm-suppress InvalidFunctionCall If it fails here then the service doesn't conform to the signature callable(ServerRequest, Variables): Response
-         * @var Response
+         * @psalm-suppress MissingClosureReturnType
+         * @psalm-suppress MixedArgumentTypeCoercion
+         * @psalm-suppress InvalidFunctionCall
          */
-        return $container($this->service)($request, $variables);
+        return Handle::of(
+            static fn(...$args) => $container($service)(...$args),
+        );
     }
 
     public static function service(Service $service): self

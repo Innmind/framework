@@ -9,13 +9,17 @@ use Innmind\Http\{
     Response\StatusCode,
 };
 use Innmind\Router\{
-    Route,
-    Under,
-    RequestMatcher\RequestMatcher,
+    Component,
+    Router as Route,
+    Any,
+    Handle,
+    Respond,
 };
 use Innmind\Immutable\{
     Maybe,
     Sequence,
+    Attempt,
+    SideEffect,
 };
 
 /**
@@ -24,7 +28,7 @@ use Innmind\Immutable\{
 final class Router implements RequestHandler
 {
     /**
-     * @param Sequence<Route|Under> $routes
+     * @param Sequence<Component<SideEffect, Response>> $routes
      * @param Maybe<\Closure(ServerRequest): Response> $notFound
      */
     public function __construct(
@@ -36,18 +40,23 @@ final class Router implements RequestHandler
     #[\Override]
     public function __invoke(ServerRequest $request): Response
     {
-        $match = new RequestMatcher($this->routes);
-        $notFound = $this->notFound;
+        /**
+         * @psalm-suppress MixedArgumentTypeCoercion
+         */
+        $route = Route::of(
+            Any::from($this->routes)
+                ->otherwise(Respond::withHttpErrors())
+                ->or(Handle::via(
+                    fn($request, SideEffect $_) => $this->notFound->match(
+                        static fn($handle) => Attempt::result($handle($request)),
+                        static fn() => Attempt::result(Response::of(
+                            StatusCode::notFound,
+                            $request->protocolVersion(),
+                        )),
+                    ),
+                )),
+        );
 
-        return $match($request)
-            ->map(static fn($route) => $route->respondTo(...))
-            ->otherwise(static fn() => $notFound)
-            ->match(
-                static fn($handle) => $handle($request),
-                static fn() => Response::of(
-                    StatusCode::notFound,
-                    $request->protocolVersion(),
-                ),
-            );
+        return $route($request)->unwrap();
     }
 }

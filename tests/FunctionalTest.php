@@ -35,7 +35,8 @@ class FunctionalTest extends TestCase
             ->execute(
                 Command::foreground('php fixtures/server.php')
                     ->withEnvironment('PATH', \getenv('PATH')),
-            );
+            )
+            ->unwrap();
     }
 
     public function tearDown(): void
@@ -44,7 +45,7 @@ class FunctionalTest extends TestCase
             fn($pid) => $this->os->control()->processes()->kill(
                 $pid,
                 Signal::kill,
-            ),
+            )->unwrap(),
             static fn() => null,
         );
     }
@@ -54,8 +55,8 @@ class FunctionalTest extends TestCase
         $started = $this
             ->server
             ->output()
-            ->chunks()
-            ->find(static fn($pair) => $pair[0]->startsWith('HTTP server ready!'));
+            ->map(static fn($chunk) => $chunk->data())
+            ->find(static fn($chunk) => $chunk->startsWith('HTTP server ready!'));
 
         $this->assertTrue($started->match(
             static fn() => true,

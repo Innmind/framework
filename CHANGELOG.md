@@ -2,9 +2,16 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Requires `innmind/foundation:~1.9`
+- Requires `innmind/di:~3.0`
+- `Innmind\Framework\Application::route()` callable must now return a `Innmind\Router\Component`
+
 ### Removed
 
 - The ability to use `string`s to reference services
+- `Innmind\Framework\Http\Service`
 
 ### Fixed
 
