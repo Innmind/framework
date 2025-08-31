@@ -19,11 +19,13 @@ abstract class Http extends Main
 {
     private Application $app;
 
+    #[\Override]
     protected function preload(OperatingSystem $os, Environment $env): void
     {
         $this->app = static::configure(Application::http($os, AppEnv::http($env)));
     }
 
+    #[\Override]
     protected function main(ServerRequest $request): Response
     {
         /**

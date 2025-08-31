@@ -87,6 +87,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapEnvironment(callable $map): self
     {
         /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
@@ -103,6 +104,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapOperatingSystem(callable $map): self
     {
         /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
@@ -119,6 +121,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function service(string|Service $name, callable $definition): self
     {
         $container = $this->container;
@@ -139,6 +142,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function command(callable $command): self
     {
         return $this;
@@ -147,6 +151,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapCommand(callable $map): self
     {
         return $this;
@@ -155,6 +160,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function route(string $pattern, callable $handle): self
     {
         return $this->appendRoutes(
@@ -173,6 +179,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function appendRoutes(callable $append): self
     {
         return new self(
@@ -188,6 +195,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapRequestHandler(callable $map): self
     {
         $previous = $this->mapRequestHandler;
@@ -215,6 +223,7 @@ final class Http implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function notFoundRequestHandler(callable $handle): self
     {
         return new self(
@@ -227,6 +236,7 @@ final class Http implements Implementation
         );
     }
 
+    #[\Override]
     public function run($input)
     {
         $container = ($this->container)($this->os, $this->env)->build();

@@ -28,6 +28,7 @@ final class LoadDotEnv implements Middleware
         $this->folder = $folder;
     }
 
+    #[\Override]
     public function __invoke(Application $app): Application
     {
         $folder = $this->folder;
