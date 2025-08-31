@@ -1,6 +1,6 @@
 # Build an app that runs through HTTP and CLI
 
-If you looked at how to build an [HTTP](http.md) and [CLI](cli.md) app you may have noticed that we always configure the same `Application` class. This is intentional to allow you to configure services once (in a [middleware](middlewares)) and use them in both contexts.
+If you looked at how to build an [HTTP](http.md) and [CLI](cli.md) app you may have noticed that we always configure the same `Application` class. This is intentional to allow you to configure services once (in a [middleware](middlewares.md)) and use them in both contexts.
 
 Let's take an imaginary app where you can upload images via HTTP (persists them to the filesystem) and a CLI command that pulls a message from an AMQP queue to build the thumbnail. We would build a middleware that roughly looks like this:
 
@@ -12,9 +12,19 @@ use Innmind\Framework\{
     Http\Service,
 };
 use Innmind\OperatingSystem\OperatingSystem;
-use Innmind\DI\Container;
+use Innmind\DI\{
+    Container,
+    Service,
+};
 use Innmind\Router\Route;
 use Innmind\Url\Path;
+
+enum Services implements Service
+{
+    case images;
+    case amqp;
+    case upload;
+}
 
 final class Kernel implements Middleware
 {
@@ -22,24 +32,24 @@ final class Kernel implements Middleware
     {
         return $app
             ->service(
-                'images',
+                Services::images,
                 static fn($_, OperatingSystem $os) => $os
                     ->filesystem()
                     ->mount(Path::of('somewhere/on/the/filesystem/')),
             )
-            ->service('amqp', /* see services topic */)
-            ->service('upload', static fn(Container $container) => new UploadHandler( //(1)
-                $container('images'),
-                $container('amqp'),
+            ->service(Services::amqp, /* see services topic */)
+            ->service(Services::upload, static fn(Container $container) => new UploadHandler( //(1)
+                $container(Services::images),
+                $container(Services::amqp),
             ))
             ->appendRoutes(
                 static fn(Routes $routes, Container $container) => $routes->add(
-                    Route::literal('POST /upload')->handle(Service::of($container, 'upload')),
+                    Route::literal('POST /upload')->handle(Service::of($container, Services::upload)),
                 ),
             )
             ->command(static fn(Container $container) => new ThumbnailWorker( //(2)
-                $container('images'),
-                $container('amqp'),
+                $container(Services::images),
+                $container(Services::amqp),
             ));
     }
 }

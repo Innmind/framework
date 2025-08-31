@@ -117,7 +117,7 @@ final class AppTest extends TestCase
         ]))
             ->map(new Kernel)
             ->mapRequestHandler(
-                fn($handler, $container) => new class($handler, $container('pdo'), $this) implements RequestHandler {
+                fn($handler, $container) => new class($handler, $container(Services::pdo), $this) implements RequestHandler {
                     public function __construct(
                         private RequestHandler $handler,
                         private \PDO $pdo,
