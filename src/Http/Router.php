@@ -38,6 +38,7 @@ final class Router implements RequestHandler
         $this->notFound = $notFound;
     }
 
+    #[\Override]
     public function __invoke(ServerRequest $request): Response
     {
         $match = new RequestMatcher($this->routes);

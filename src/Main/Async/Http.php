@@ -15,6 +15,7 @@ use Innmind\OperatingSystem\OperatingSystem;
  */
 abstract class Http extends Main
 {
+    #[\Override]
     protected function main(Environment $env, OperatingSystem $os): Environment
     {
         /**

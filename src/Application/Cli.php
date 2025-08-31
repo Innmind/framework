@@ -77,6 +77,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapEnvironment(callable $map): self
     {
         /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
@@ -92,6 +93,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapOperatingSystem(callable $map): self
     {
         /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
@@ -107,6 +109,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function service(string|Service $name, callable $definition): self
     {
         $container = $this->container;
@@ -126,6 +129,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function command(callable $command): self
     {
         /** @psalm-suppress ImpureMethodCall Mutation free to force the user to use the returned object */
@@ -144,6 +148,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapCommand(callable $map): self
     {
         $previous = $this->mapCommand;
@@ -170,6 +175,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function route(string $pattern, callable $handle): self
     {
         return $this;
@@ -178,6 +184,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function appendRoutes(callable $append): self
     {
         return $this;
@@ -186,6 +193,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapRequestHandler(callable $map): self
     {
         return $this;
@@ -194,11 +202,13 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function notFoundRequestHandler(callable $handle): self
     {
         return $this;
     }
 
+    #[\Override]
     public function run($input)
     {
         $container = ($this->container)($this->os, $this->env)->build();

@@ -25,6 +25,7 @@ final class Optional implements Middleware
         $this->factory = $factory;
     }
 
+    #[\Override]
     public function __invoke(Application $app): Application
     {
         if (!\class_exists($this->middleware)) {

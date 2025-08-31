@@ -36,6 +36,7 @@ final class Defer implements Command
         $this->map = $map;
     }
 
+    #[\Override]
     public function __invoke(Console $console): Console
     {
         // we map the command when running it instead of when loading it to
@@ -50,6 +51,7 @@ final class Defer implements Command
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function usage(): string
     {
         /** @psalm-suppress ImpureMethodCall */
