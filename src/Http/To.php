@@ -14,6 +14,7 @@ use Innmind\Router\{
     Component,
     Handle,
 };
+use Innmind\Immutable\Map;
 
 final class To
 {
@@ -22,7 +23,7 @@ final class To
     }
 
     /**
-     * @return Component<mixed, Response>
+     * @return Component<Map<string, mixed>, Response>
      */
     public function __invoke(
         Container $container,
@@ -35,9 +36,10 @@ final class To
          * @psalm-suppress MissingClosureReturnType
          * @psalm-suppress MixedArgumentTypeCoercion
          * @psalm-suppress InvalidFunctionCall
+         * @todo fix non lazy call
          */
         return Handle::of(
-            static fn(...$args) => $container($service)(...$args),
+            $container($service),
         );
     }
 
