@@ -47,22 +47,22 @@ class ApplicationTest extends TestCase
 {
     use BlackBox;
 
-    public function testCliApplicationReturnsHelloWorldByDefault()
+    public function testCliApplicationReturnsHelloWorldByDefault(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $arguments, $variables) {
+            ->prove(function($inputs, $interactive, $arguments, $variables) {
                 $app = Application::cli(Factory::build(), $env = Environment::test($variables));
 
                 $env = $app->run(InMemory::of(
@@ -81,22 +81,22 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testOrderOfMappingEnvironmentAndOperatingSystemIsKept()
+    public function testOrderOfMappingEnvironmentAndOperatingSystemIsKept(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $arguments, $variables) {
+            ->prove(function($inputs, $interactive, $arguments, $variables) {
                 $os = Factory::build();
                 $app = Application::cli($os, Environment::test($variables))
                     ->mapEnvironment(static fn($env) => $env->with('foo', 'bar'))
@@ -148,21 +148,21 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testRunDefaultCommand()
+    public function testRunDefaultCommand(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
                         public function __invoke(Console $console): Console
@@ -192,21 +192,21 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testRunSpecificCommand()
+    public function testRunSpecificCommand(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
                         public function __invoke(Console $console): Console
@@ -261,23 +261,23 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testServicesAreNotLoadedIfNotUsed()
+    public function testServicesAreNotLoadedIfNotUsed(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
-                Set\Strings::atLeast(1),
+                Set::strings()->atLeast(1),
             )
-            ->then(function($inputs, $interactive, $arguments, $variables, $service) {
+            ->prove(function($inputs, $interactive, $arguments, $variables, $service) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->service($service, static fn() => throw new \Exception);
 
@@ -297,22 +297,22 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testServicesAreAccessibleToCommands()
+    public function testServicesAreAccessibleToCommands(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
-                Set\Strings::atLeast(1),
+                Set::strings()->atLeast(1),
             )
-            ->then(function($inputs, $interactive, $variables, $service) {
+            ->prove(function($inputs, $interactive, $variables, $service) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn($get) => new class($get($service)) implements Command {
                         public function __construct(
@@ -348,23 +348,23 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testServiceDependencies()
+    public function testServiceDependencies(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
-                Set\Strings::atLeast(1),
-                Set\Strings::atLeast(1),
+                Set::strings()->atLeast(1),
+                Set::strings()->atLeast(1),
             )
-            ->then(function($inputs, $interactive, $variables, $serviceA, $serviceB) {
+            ->prove(function($inputs, $interactive, $variables, $serviceA, $serviceB) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn($get) => new class($get($serviceA)) implements Command {
                         public function __construct(
@@ -401,21 +401,21 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testUnusedCommandIsNotLoaded()
+    public function testUnusedCommandIsNotLoaded(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
                         public function __invoke(Console $console): Console
@@ -461,21 +461,21 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testDecoratingCommands()
+    public function testDecoratingCommands(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
                         public function __invoke(Console $console): Console
@@ -521,21 +521,21 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testCommandDecoratorIsAppliedOnlyOnTheWishedOne()
+    public function testCommandDecoratorIsAppliedOnlyOnTheWishedOne(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 static $testRuns = 0;
                 ++$testRuns;
                 $app = Application::cli(Factory::build(), Environment::test($variables))
@@ -597,21 +597,21 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testMiddleware()
+    public function testMiddleware(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->map(new class implements Middleware {
                         public function __invoke(Application $app): Application
@@ -679,21 +679,21 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testOptionalMiddleware()
+    public function testOptionalMiddleware(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $middleware = new class implements Middleware {
                     public function __invoke(Application $app): Application
                     {
@@ -737,21 +737,21 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testLoadDotEnv()
+    public function testLoadDotEnv(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->map(LoadDotEnv::at(Path::of(__DIR__.'/../fixtures/')))
                     ->command(static fn($_, $__, $env) => new class($env) implements Command {
@@ -789,22 +789,22 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testHttpApplicationReturnsNotFoundByDefault()
+    public function testHttpApplicationReturnsNotFoundByDefault(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
                 FUrl::any(),
-                Set\Elements::of(...Method::cases()),
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...Method::cases()),
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($url, $method, $protocol, $variables) {
+            ->prove(function($url, $method, $protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables));
 
                 $response = $app->run(ServerRequest::of(
@@ -818,20 +818,20 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testMatchRoutes()
+    public function testMatchRoutes(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($protocol, $variables) {
+            ->prove(function($protocol, $variables) {
                 $responseA = Response::of(StatusCode::ok, $protocol);
                 $responseB = Response::of(StatusCode::ok, $protocol);
 
@@ -869,20 +869,20 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testRouteShortDeclaration()
+    public function testRouteShortDeclaration(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($protocol, $variables) {
+            ->prove(function($protocol, $variables) {
                 $responseA = Response::of(StatusCode::ok, $protocol);
                 $responseB = Response::of(StatusCode::ok, $protocol);
 
@@ -916,20 +916,20 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testRouteToService()
+    public function testRouteToService(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($protocol, $variables) {
+            ->prove(function($protocol, $variables) {
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
@@ -955,22 +955,22 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testMapRequestHandler()
+    public function testMapRequestHandler(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
                 FUrl::any(),
-                Set\Elements::of(...Method::cases()),
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...Method::cases()),
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($url, $method, $protocol, $variables) {
+            ->prove(function($url, $method, $protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables))
                     ->mapRequestHandler(static fn($inner) => new class($inner) implements RequestHandler {
                         public function __construct(
@@ -1008,22 +1008,22 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testAllowToSpecifyHttpNotFoundRequestHandler()
+    public function testAllowToSpecifyHttpNotFoundRequestHandler(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
                 FUrl::any(),
-                Set\Elements::of(...Method::cases()),
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...Method::cases()),
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($url, $method, $protocol, $variables) {
+            ->prove(function($url, $method, $protocol, $variables) {
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
@@ -1043,20 +1043,20 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testMatchMethodAllowed()
+    public function testMatchMethodAllowed(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($protocol, $variables) {
+            ->prove(function($protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables))
                     ->appendRoutes(static fn($routes) => $routes->add(
                         Under::of(Template::of('/foo'))->route(Method::get),
