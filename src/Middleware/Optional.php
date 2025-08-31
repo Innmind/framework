@@ -10,19 +10,14 @@ use Innmind\Framework\{
 
 final class Optional implements Middleware
 {
-    /** @var class-string<Middleware> */
-    private string $middleware;
-    /** @var callable(): Middleware */
-    private $factory;
-
     /**
      * @param class-string<Middleware> $middleware
-     * @param callable(): Middleware $factory
+     * @param \Closure(): Middleware $factory
      */
-    private function __construct(string $middleware, callable $factory)
-    {
-        $this->middleware = $middleware;
-        $this->factory = $factory;
+    private function __construct(
+        private string $middleware,
+        private \Closure $factory,
+    ) {
     }
 
     #[\Override]
@@ -45,7 +40,7 @@ final class Optional implements Middleware
     {
         return new self(
             $middleware,
-            $factory ?? static fn() => new $middleware,
+            \Closure::fromCallable($factory ?? static fn() => new $middleware),
         );
     }
 }

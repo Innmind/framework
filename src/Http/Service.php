@@ -15,13 +15,10 @@ use Innmind\Router\Route\Variables;
 
 final class Service
 {
-    private Container $container;
-    private Ref $service;
-
-    private function __construct(Container $container, Ref $service)
-    {
-        $this->container = $container;
-        $this->service = $service;
+    private function __construct(
+        private Container $container,
+        private Ref $service,
+    ) {
     }
 
     public function __invoke(ServerRequest $request, Variables $variables): Response

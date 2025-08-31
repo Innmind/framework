@@ -17,11 +17,8 @@ use Innmind\Router\Route\Variables;
 
 final class To
 {
-    private Service $service;
-
-    private function __construct(Service $service)
+    private function __construct(private Service $service)
     {
-        $this->service = $service;
     }
 
     public function __invoke(

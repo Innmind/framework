@@ -14,15 +14,11 @@ use Innmind\Immutable\Sequence;
  */
 final class Routes
 {
-    /** @var Sequence<Route|Under> */
-    private Sequence $routes;
-
     /**
      * @param Sequence<Route|Under> $routes
      */
-    private function __construct(Sequence $routes)
+    private function __construct(private Sequence $routes)
     {
-        $this->routes = $routes;
     }
 
     /**

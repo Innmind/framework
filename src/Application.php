@@ -28,17 +28,14 @@ use Innmind\Router\Route\Variables;
  */
 final class Application
 {
-    /** @var Application\Implementation<I, O> */
-    private Application\Implementation $app;
-
     /**
      * @psalm-mutation-free
      *
      * @param Application\Implementation<I, O> $app
      */
-    private function __construct(Application\Implementation $app)
-    {
-        $this->app = $app;
+    private function __construct(
+        private Application\Implementation $app,
+    ) {
     }
 
     /**
