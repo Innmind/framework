@@ -1,6 +1,6 @@
 # Middlewares
 
-Middlewares are a way to regroup all the configuration you've seen in other topics under a name. This means that you can either group part of your own application undeer a middleware or expose a package for other to use via Packagist.
+Middlewares are a way to regroup all the configuration you've seen in other topics under a name. This means that you can either group part of your own application under a middleware or expose a package for other to use via Packagist.
 
 !!! note ""
     You can search for [`innmind/framework-middlewares` on Packagist](https://packagist.org/providers/innmind/framework-middlewares) for middlewares published by others.
@@ -12,17 +12,25 @@ use Innmind\Framework\{
     Middleware,
     Environment,
 };
-use Innmind\DI\Container;
+use Innmind\DI\{
+    Container,
+    Service,
+};
 use Innmind\CLI\{
     Console,
     Command,
 };
 use Innmind\Url\Url;
 
+enum Services implements Service
+{
+    case emailServer;
+}
+
 final class Emails implements Middleware
 {
     public function __construct(
-        private string $service,
+        private Service $service,
     ){
     }
 
@@ -30,7 +38,7 @@ final class Emails implements Middleware
     {
         return $app
             ->service(
-                'email-server'
+                Services::emailServer
                 static fn($_, $__, Environment $env) => Url::of(
                     $env->get('EMAIL_SERVER'),
                 ),
@@ -38,7 +46,7 @@ final class Emails implements Middleware
             ->service(
                 $this->service,
                 static fn(Container $container) => new EmailClient( //(1)
-                    $container('email-server'),
+                    $container(Services::emailServer),
                 ),
             )
             ->command(
@@ -75,10 +83,15 @@ use Innmind\Framework\{
     Application,
 };
 
+enum MyServices implements Service
+{
+    case emailClient;
+}
+
 new class extends Cli {
     protected function configure(Application $app): Application
     {
-        return $app->map(new Emails('email-client-service-name'));
+        return $app->map(new Emails(MyServices::emailClient));
     }
 };
 ```

@@ -17,9 +17,9 @@ use Innmind\Router\Route\Variables;
 
 final class To
 {
-    private string|Service $service;
+    private Service $service;
 
-    private function __construct(string|Service $service)
+    private function __construct(Service $service)
     {
         $this->service = $service;
     }
@@ -38,7 +38,7 @@ final class To
         return $container($this->service)($request, $variables);
     }
 
-    public static function service(string|Service $service): self
+    public static function service(Service $service): self
     {
         return new self($service);
     }

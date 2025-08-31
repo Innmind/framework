@@ -3,36 +3,43 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework\Cli\Command;
 
+use Innmind\Framework\Environment;
 use Innmind\CLI\{
     Command,
     Console,
 };
-use Innmind\DI\{
-    Container,
-    Service,
-};
+use Innmind\OperatingSystem\OperatingSystem;
+use Innmind\DI\Container;
 
 /**
  * @internal
  */
 final class Defer implements Command
 {
-    private string|Service $service;
+    /** @var callable(Container, OperatingSystem, Environment): Command */
+    private $build;
     private Container $locate;
+    private OperatingSystem $os;
+    private Environment $env;
     /** @var callable(Command): Command */
     private $map;
     private ?Command $command = null;
 
     /**
+     * @param callable(Container, OperatingSystem, Environment): Command $build
      * @param callable(Command): Command $map
      */
     public function __construct(
-        string|Service $service,
+        callable $build,
         Container $locate,
+        OperatingSystem $os,
+        Environment $env,
         callable $map,
     ) {
-        $this->service = $service;
+        $this->build = $build;
         $this->locate = $locate;
+        $this->os = $os;
+        $this->env = $env;
         $this->map = $map;
     }
 
@@ -64,6 +71,6 @@ final class Defer implements Command
          * @psalm-suppress PropertyTypeCoercion
          * @var Command
          */
-        return $this->command ??= ($this->locate)($this->service);
+        return $this->command ??= ($this->build)($this->locate, $this->os, $this->env);
     }
 }

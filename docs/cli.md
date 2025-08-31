@@ -36,7 +36,10 @@ use Innmind\CLI\{
     Console,
     Command,
 };
-use Innmind\DI\Container;
+use Innmind\DI\{
+    Container,
+    Service,
+};
 use Innmind\AMQP\{
     Client,
     Command\Publish,
@@ -45,13 +48,19 @@ use Innmind\AMQP\{
 };
 use Innmind\Immutable\Str;
 
+enum Services implements Service
+{
+    case producerClient;
+    case consumerClient;
+}
+
 new class extends Cli {
     protected function configure(Application $app): Application
     {
         return $app
-            ->service('producer-client', /* see services topic */)
-            ->service('consumer-client', /* see services topic */)
-            ->command(static fn(Container $container) => new class($container('producer-client')) implements Command {
+            ->service(Services::producerClient, /* see services topic */)
+            ->service(Services::consumerClient, /* see services topic */)
+            ->command(static fn(Container $container) => new class($container(Services::producerClient)) implements Command {
                 public function __construct(
                     private Client $amqp,
                 ) {
@@ -82,7 +91,7 @@ new class extends Cli {
                     return 'publish url';
                 }
             })
-            ->command(static fn(Container $container) => new class($container('consumer-client')) implements Command {
+            ->command(static fn(Container $container) => new class($container(Services::consumerClient)) implements Command {
                 public function __construct(
                     private Client $amqp,
                 ) {

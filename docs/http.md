@@ -95,7 +95,7 @@ new class extends Http {
 };
 ```
 
-For simple apps having the whole behaviour next to the route can be ok. But like in this case it can be repetitive, for such case we can specify our behaviours elsewhere: [services](#Services).
+For simple apps having the whole behaviour next to the route can be ok. But like in this case it can be repetitive, for such case we can specify our behaviours elsewhere: [services](#services).
 
 ## Multiple methods for the same path
 
@@ -203,7 +203,10 @@ use Innmind\Framework\{
     Http\Service,
     Http\To,
 };
-use Innmind\DI\Container;
+use Innmind\DI\{
+    Container,
+    Service,
+};
 use Innmind\Router\{
     Route,
     Route\Variables,
@@ -215,12 +218,18 @@ use Innmind\Http\Message\{
 };
 use Innmind\Filesystem\File\Content;
 
+enum Services implements Service
+{
+    case helloWorld;
+    case helloName;
+}
+
 new class extends Http {
     protected function configure(Application $app): Application
     {
         return $app
             ->service(
-                'hello-word',
+                Services::helloWorld,
                 static fn() => new class {
                     public function __invoke(ServerRequest $request): Response
                     {
@@ -234,7 +243,7 @@ new class extends Http {
                 }
             )
             ->service(
-                'hello-name',
+                Services::helloName,
                 static fn() => new class {
                     public function __invoke(
                         ServerRequest $request,
@@ -252,11 +261,11 @@ new class extends Http {
             ->appendRoutes(
                 static fn(Routes $routes, Container $container) => $routes->add(
                     Route::literal('GET /')->handle(
-                        Service::of($container, 'hello-word'),
+                        Service::of($container, Services::helloWorld),
                     ),
                 ),
             )
-            ->route('GET /{name}', To::service('hello-name'));
+            ->route('GET /{name}', To::service(Services::helloName));
     }
 };
 ```

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- The ability to use `string`s to reference services
+
 ### Fixed
 
 - PHP `8.4` deprecations

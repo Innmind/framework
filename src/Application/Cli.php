@@ -22,7 +22,6 @@ use Innmind\Immutable\{
     Sequence,
     Str,
 };
-use Ramsey\Uuid\Uuid;
 
 /**
  * @internal
@@ -34,7 +33,7 @@ final class Cli implements Implementation
     private Environment $env;
     /** @var callable(OperatingSystem, Environment): Builder */
     private $container;
-    /** @var Sequence<string> */
+    /** @var Sequence<callable(Container, OperatingSystem, Environment): Command> */
     private Sequence $commands;
     /** @var callable(Command, Container, OperatingSystem, Environment): Command */
     private $mapCommand;
@@ -43,7 +42,7 @@ final class Cli implements Implementation
      * @psalm-mutation-free
      *
      * @param callable(OperatingSystem, Environment): Builder $container
-     * @param Sequence<string> $commands
+     * @param Sequence<callable(Container, OperatingSystem, Environment): Command> $commands
      * @param callable(Command, Container, OperatingSystem, Environment): Command $mapCommand
      */
     private function __construct(
@@ -69,7 +68,7 @@ final class Cli implements Implementation
             $os,
             $env,
             static fn() => Builder::new(),
-            Sequence::strings(),
+            Sequence::of(),
             static fn(Command $command) => $command,
         );
     }
@@ -110,7 +109,7 @@ final class Cli implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
-    public function service(string|Service $name, callable $definition): self
+    public function service(Service $name, callable $definition): self
     {
         $container = $this->container;
 
@@ -132,16 +131,12 @@ final class Cli implements Implementation
     #[\Override]
     public function command(callable $command): self
     {
-        /** @psalm-suppress ImpureMethodCall Mutation free to force the user to use the returned object */
-        $reference = Uuid::uuid4()->toString();
-        $self = $this->service($reference, $command);
-
         return new self(
-            $self->os,
-            $self->env,
-            $self->container,
-            ($self->commands)($reference),
-            $self->mapCommand,
+            $this->os,
+            $this->env,
+            $this->container,
+            ($this->commands)($command),
+            $this->mapCommand,
         );
     }
 
@@ -221,9 +216,11 @@ final class Cli implements Implementation
             $os,
             $env,
         );
-        $commands = $this->commands->map(static fn($service) => new Defer(
-            $service,
+        $commands = $this->commands->map(static fn($command) => new Defer(
+            $command,
             $container,
+            $os,
+            $env,
             $mapCommand,
         ));
 

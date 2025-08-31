@@ -122,7 +122,7 @@ final class Http implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
-    public function service(string|Service $name, callable $definition): self
+    public function service(Service $name, callable $definition): self
     {
         $container = $this->container;
 

@@ -51,12 +51,11 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
-     * @param non-empty-string|Service $name
      * @param callable(Container, OperatingSystem, Environment): object $definition
      *
      * @return self<I, O>
      */
-    public function service(string|Service $name, callable $definition): self;
+    public function service(Service $name, callable $definition): self;
 
     /**
      * @psalm-mutation-free

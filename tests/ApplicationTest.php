@@ -18,6 +18,7 @@ use Innmind\CLI\{
     Command,
     Console,
 };
+use Innmind\DI\Service;
 use Innmind\Router\{
     Route,
     Under,
@@ -42,6 +43,14 @@ use Innmind\BlackBox\{
     PHPUnit\Framework\TestCase,
 };
 use Fixtures\Innmind\Url\Url as FUrl;
+
+enum Services implements Service
+{
+    case responseHandler;
+    case service;
+    case serviceA;
+    case serviceB;
+}
 
 class ApplicationTest extends TestCase
 {
@@ -275,11 +284,10 @@ class ApplicationTest extends TestCase
                         Set::strings(),
                     ),
                 )->between(0, 10),
-                Set::strings()->atLeast(1),
             )
-            ->prove(function($inputs, $interactive, $arguments, $variables, $service) {
+            ->prove(function($inputs, $interactive, $arguments, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
-                    ->service($service, static fn() => throw new \Exception);
+                    ->service(Services::service, static fn() => throw new \Exception);
 
                 $env = $app->run(InMemory::of(
                     $inputs,
@@ -310,11 +318,10 @@ class ApplicationTest extends TestCase
                         Set::strings(),
                     ),
                 )->between(0, 10),
-                Set::strings()->atLeast(1),
             )
-            ->prove(function($inputs, $interactive, $variables, $service) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
-                    ->command(static fn($get) => new class($get($service)) implements Command {
+                    ->command(static fn($get) => new class($get(Services::service)) implements Command {
                         public function __construct(
                             private Str $output,
                         ) {
@@ -330,7 +337,7 @@ class ApplicationTest extends TestCase
                             return 'my-command';
                         }
                     })
-                    ->service($service, static fn() => Str::of('my command output'));
+                    ->service(Services::service, static fn() => Str::of('my command output'));
 
                 $env = $app->run(InMemory::of(
                     $inputs,
@@ -361,12 +368,10 @@ class ApplicationTest extends TestCase
                         Set::strings(),
                     ),
                 )->between(0, 10),
-                Set::strings()->atLeast(1),
-                Set::strings()->atLeast(1),
             )
-            ->prove(function($inputs, $interactive, $variables, $serviceA, $serviceB) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
-                    ->command(static fn($get) => new class($get($serviceA)) implements Command {
+                    ->command(static fn($get) => new class($get(Services::serviceA)) implements Command {
                         public function __construct(
                             private Str $output,
                         ) {
@@ -382,8 +387,8 @@ class ApplicationTest extends TestCase
                             return 'my-command';
                         }
                     })
-                    ->service($serviceA, static fn($get) => Str::of('my command output')->append($get($serviceB)->toString()))
-                    ->service($serviceB, static fn() => Str::of(' twice'));
+                    ->service(Services::serviceA, static fn($get) => Str::of('my command output')->append($get(Services::serviceB)->toString()))
+                    ->service(Services::serviceB, static fn() => Str::of(' twice'));
 
                 $env = $app->run(InMemory::of(
                     $inputs,
@@ -933,8 +938,8 @@ class ApplicationTest extends TestCase
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->route('GET /foo', To::service('response-handler'))
-                    ->service('response-handler', static fn() => new class($expected) {
+                    ->route('GET /foo', To::service(Services::responseHandler))
+                    ->service(Services::responseHandler, static fn() => new class($expected) {
                         public function __construct(private $response)
                         {
                         }

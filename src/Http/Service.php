@@ -16,9 +16,9 @@ use Innmind\Router\Route\Variables;
 final class Service
 {
     private Container $container;
-    private string|Ref $service;
+    private Ref $service;
 
-    private function __construct(Container $container, string|Ref $service)
+    private function __construct(Container $container, Ref $service)
     {
         $this->container = $container;
         $this->service = $service;
@@ -33,7 +33,7 @@ final class Service
         return ($this->container)($this->service)($request, $variables);
     }
 
-    public static function of(Container $container, string|Ref $service): self
+    public static function of(Container $container, Ref $service): self
     {
         return new self($container, $service);
     }
