@@ -28,8 +28,8 @@ final class To
         ServerRequest $request,
         Variables $variables,
         Container $container,
-        OperatingSystem $os = null, // these arguments are not used, there here
-        Environment $env = null, // to satisfy Psalm when used in Framework::route()
+        ?OperatingSystem $os = null, // these arguments are not used, there here
+        ?Environment $env = null, // to satisfy Psalm when used in Framework::route()
     ): Response {
         /**
          * @psalm-suppress InvalidFunctionCall If it fails here then the service doesn't conform to the signature callable(ServerRequest, Variables): Response
