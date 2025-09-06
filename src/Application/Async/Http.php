@@ -21,10 +21,7 @@ use Innmind\DI\{
     Builder,
     Service,
 };
-use Innmind\Router\{
-    Method,
-    Endpoint,
-};
+use Innmind\Router\Pipe;
 use Innmind\Http\{
     ServerRequest,
     Response,
@@ -168,37 +165,11 @@ final class Http implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
-    public function route(string $pattern, callable $handle): self
+    public function route(callable $handle): self
     {
-        /**
-         * @psalm-suppress PossiblyUndefinedArrayOffset Todo better typing
-         * @var literal-string $path
-         */
-        [$method, $path] = \explode(' ', $pattern, 2);
-
-        $method = match ($method) {
-            'get', 'GET' => Method::get(),
-            'post', 'POST' => Method::post(),
-            'put', 'PUT' => Method::put(),
-            'patch', 'PATCH' => Method::patch(),
-            'delete', 'DELETE' => Method::delete(),
-            'options', 'OPTIONS' => Method::options(),
-            'trace', 'TRACE' => Method::trace(),
-            'connect', 'CONNECT' => Method::connect(),
-            'head', 'HEAD' => Method::head(),
-            'link', 'LINK' => Method::link(),
-            'unlink', 'UNLINK' => Method::unlink(),
-        };
-
-        /**
-         * @psalm-suppress MixedArgumentTypeCoercion
-         * @psalm-suppress InvalidArgument
-         */
         return $this->appendRoutes(
             static fn($routes, $container, $os, $env) => $routes->add(
-                $method
-                    ->pipe(Endpoint::of($path))
-                    ->pipe($handle($container, $os, $env)),
+                $handle(Pipe::new(), $container, $os, $env),
             ),
         );
     }

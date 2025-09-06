@@ -158,7 +158,7 @@ final class Cli implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
-    public function route(string $pattern, callable $handle): self
+    public function route(callable $handle): self
     {
         return $this;
     }

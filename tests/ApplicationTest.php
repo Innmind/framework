@@ -10,7 +10,6 @@ use Innmind\Framework\{
     Middleware\Optional,
     Middleware\LoadDotEnv,
     Http\RequestHandler,
-    Http\To,
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
@@ -905,16 +904,26 @@ class ApplicationTest extends TestCase
                 $responseB = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->route('GET /foo', fn() => Handle::via(function($request) use ($protocol, $responseA) {
-                        $this->assertSame($protocol, $request->protocolVersion());
+                    ->route(
+                        fn($pipe) => $pipe
+                            ->get()
+                            ->endpoint('/foo')
+                            ->handle(function($request) use ($protocol, $responseA) {
+                                $this->assertSame($protocol, $request->protocolVersion());
 
-                        return Attempt::result($responseA);
-                    }))
-                    ->route('GET /bar', fn() => Handle::via(function($request) use ($protocol, $responseB) {
-                        $this->assertSame($protocol, $request->protocolVersion());
+                                return Attempt::result($responseA);
+                            }),
+                    )
+                    ->route(
+                        fn($pipe) => $pipe
+                            ->post()
+                            ->endpoint('/bar')
+                            ->handle(function($request) use ($protocol, $responseB) {
+                                $this->assertSame($protocol, $request->protocolVersion());
 
-                        return Attempt::result($responseB);
-                    }));
+                                return Attempt::result($responseB);
+                            }),
+                    );
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
@@ -926,7 +935,7 @@ class ApplicationTest extends TestCase
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/bar'),
-                    Method::get,
+                    Method::post,
                     $protocol,
                 ));
 
@@ -951,7 +960,12 @@ class ApplicationTest extends TestCase
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->route('GET /foo', To::service(Services::responseHandler))
+                    ->route(
+                        static fn($pipe, $container) => $pipe
+                            ->get()
+                            ->endpoint('/foo')
+                            ->handle($container(Services::responseHandler)),
+                    )
                     ->service(Services::responseHandler, static fn() => new class($expected) {
                         public function __construct(private $response)
                         {

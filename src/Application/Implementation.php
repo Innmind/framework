@@ -17,7 +17,10 @@ use Innmind\DI\{
     Container,
     Service,
 };
-use Innmind\Router\Component;
+use Innmind\Router\{
+    Component,
+    Pipe,
+};
 use Innmind\Http\{
     ServerRequest,
     Response,
@@ -82,12 +85,11 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
-     * @param literal-string $pattern
-     * @param callable(Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
+     * @param callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */
-    public function route(string $pattern, callable $handle): self;
+    public function route(callable $handle): self;
 
     /**
      * @psalm-mutation-free
