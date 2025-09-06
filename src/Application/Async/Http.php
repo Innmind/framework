@@ -6,7 +6,6 @@ namespace Innmind\Framework\Application\Async;
 use Innmind\Framework\{
     Environment,
     Application\Implementation,
-    Http\Routes,
     Http\Router,
     Http\RequestHandler,
 };
@@ -21,7 +20,10 @@ use Innmind\DI\{
     Builder,
     Service,
 };
-use Innmind\Router\Pipe;
+use Innmind\Router\{
+    Component,
+    Pipe,
+};
 use Innmind\Http\{
     ServerRequest,
     Response,
@@ -30,6 +32,7 @@ use Innmind\Immutable\{
     Maybe,
     Sequence,
     Attempt,
+    SideEffect,
 };
 
 /**
@@ -44,7 +47,7 @@ final class Http implements Implementation
      *
      * @param \Closure(OperatingSystem, Environment): array{OperatingSystem, Environment} $map
      * @param \Closure(OperatingSystem, Environment): Builder $container
-     * @param Sequence<callable(Routes, Container, OperatingSystem, Environment): Routes> $routes
+     * @param Sequence<callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>> $routes
      * @param \Closure(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
      * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> $notFound
      */
@@ -70,7 +73,7 @@ final class Http implements Implementation
             $os,
             static fn(OperatingSystem $os, Environment $env) => [$os, $env],
             static fn() => Builder::new(),
-            Sequence::of(),
+            Sequence::lazyStartingWith(),
             static fn(RequestHandler $handler) => $handler,
             $notFound,
         );
@@ -167,24 +170,11 @@ final class Http implements Implementation
     #[\Override]
     public function route(callable $handle): self
     {
-        return $this->appendRoutes(
-            static fn($routes, $container, $os, $env) => $routes->add(
-                $handle(Pipe::new(), $container, $os, $env),
-            ),
-        );
-    }
-
-    /**
-     * @psalm-mutation-free
-     */
-    #[\Override]
-    public function appendRoutes(callable $append): self
-    {
         return new self(
             $this->os,
             $this->map,
             $this->container,
-            ($this->routes)($append),
+            ($this->routes)($handle),
             $this->mapRequestHandler,
             $this->notFound,
         );
@@ -255,15 +245,10 @@ final class Http implements Implementation
                 $env = Environment::http($request->environment());
                 [$os, $env] = $map($os, $env);
                 $container = $container($os, $env)->build();
-                $routes = Sequence::lazyStartingWith($routes)
-                    ->flatMap(static fn($routes) => $routes)
-                    ->map(static fn($provide) => $provide(
-                        Routes::lazy(),
-                        $container,
-                        $os,
-                        $env,
-                    ))
-                    ->flatMap(static fn($routes) => $routes->toSequence());
+                $pipe = Pipe::new();
+                $routes = $routes->map(
+                    static fn($handle) => $handle($pipe, $container, $os, $env),
+                );
                 $router = new Router(
                     $routes,
                     $notFound->map(

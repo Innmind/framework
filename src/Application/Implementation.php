@@ -5,7 +5,6 @@ namespace Innmind\Framework\Application;
 
 use Innmind\Framework\{
     Environment,
-    Http\Routes,
     Http\RequestHandler,
 };
 use Innmind\OperatingSystem\OperatingSystem;
@@ -90,15 +89,6 @@ interface Implementation
      * @return self<I, O>
      */
     public function route(callable $handle): self;
-
-    /**
-     * @psalm-mutation-free
-     *
-     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
-     *
-     * @return self<I, O>
-     */
-    public function appendRoutes(callable $append): self;
 
     /**
      * @psalm-mutation-free

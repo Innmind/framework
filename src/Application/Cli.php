@@ -167,15 +167,6 @@ final class Cli implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
-    public function appendRoutes(callable $append): self
-    {
-        return $this;
-    }
-
-    /**
-     * @psalm-mutation-free
-     */
-    #[\Override]
     public function mapRequestHandler(callable $map): self
     {
         return $this;

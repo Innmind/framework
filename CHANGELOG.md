@@ -15,6 +15,8 @@
 - The ability to use `string`s to reference services
 - `Innmind\Framework\Http\Service`
 - `Innmind\Framework\Http\To`
+- `Innmind\Framework\Http\Routes`
+- `Innmind\Framework\Application::appendRoutes()`
 
 ### Fixed
 

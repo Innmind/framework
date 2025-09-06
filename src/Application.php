@@ -3,10 +3,7 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework;
 
-use Innmind\Framework\Http\{
-    Routes,
-    RequestHandler,
-};
+use Innmind\Framework\Http\RequestHandler;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\CLI\{
     Environment as CliEnv,
@@ -157,18 +154,6 @@ final class Application
     public function route(callable $handle): self
     {
         return new self($this->app->route($handle));
-    }
-
-    /**
-     * @psalm-mutation-free
-     *
-     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
-     *
-     * @return self<I, O>
-     */
-    public function appendRoutes(callable $append): self
-    {
-        return new self($this->app->appendRoutes($append));
     }
 
     /**

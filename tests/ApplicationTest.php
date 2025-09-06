@@ -19,11 +19,6 @@ use Innmind\CLI\{
     Console,
 };
 use Innmind\DI\Service;
-use Innmind\Router\{
-    Endpoint,
-    Method as RouterMethod,
-    Handle,
-};
 use Innmind\Http\{
     ServerRequest,
     Response,
@@ -849,24 +844,26 @@ class ApplicationTest extends TestCase
                 $responseB = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->appendRoutes(fn($routes) => $routes->add(
-                        RouterMethod::get()
-                            ->pipe(Endpoint::of('/foo'))
-                            ->pipe(Handle::via(function($request) use ($protocol, $responseA) {
+                    ->route(
+                        fn($pipe) => $pipe
+                            ->get()
+                            ->endpoint('/foo')
+                            ->handle(function($request) use ($protocol, $responseA) {
                                 $this->assertSame($protocol, $request->protocolVersion());
 
                                 return Attempt::result($responseA);
-                            })),
-                    ))
-                    ->appendRoutes(fn($routes) => $routes->add(
-                        RouterMethod::get()
-                            ->pipe(Endpoint::of('/bar'))
-                            ->pipe(Handle::via(function($request) use ($protocol, $responseB) {
-                                $this->assertSame($protocol, $request->protocolVersion());
+                            })
+                            ->or(
+                                $pipe
+                                    ->get()
+                                    ->endpoint('/bar')
+                                    ->handle(function($request) use ($protocol, $responseB) {
+                                        $this->assertSame($protocol, $request->protocolVersion());
 
-                                return Attempt::result($responseB);
-                            })),
-                    ));
+                                        return Attempt::result($responseB);
+                                    }),
+                            ),
+                    );
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
@@ -1093,16 +1090,20 @@ class ApplicationTest extends TestCase
             )
             ->prove(function($protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->appendRoutes(static fn($routes) => $routes->add(
-                        Endpoint::of('/foo')
-                            ->pipe(RouterMethod::get())
-                            ->pipe(Handle::of(static fn($request) => Attempt::result(
-                                Response::of(
-                                    StatusCode::ok,
-                                    $request->protocolVersion(),
-                                ),
-                            ))),
-                    ));
+                    ->route(
+                        static fn($pipe) => $pipe
+                            ->endpoint('/foo')
+                            ->any(
+                                $pipe
+                                    ->get()
+                                    ->handle(static fn($request) => Attempt::result(
+                                        Response::of(
+                                            StatusCode::ok,
+                                            $request->protocolVersion(),
+                                        ),
+                                    )),
+                            ),
+                    );
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
