@@ -10,6 +10,7 @@ use Innmind\Framework\{
     Middleware\Optional,
     Middleware\LoadDotEnv,
     Http\RequestHandler,
+    Http\Route,
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
@@ -963,6 +964,48 @@ class ApplicationTest extends TestCase
                             ->endpoint('/foo')
                             ->handle($container(Services::responseHandler)),
                     )
+                    ->service(Services::responseHandler, static fn() => new class($expected) {
+                        public function __construct(private $response)
+                        {
+                        }
+
+                        public function __invoke()
+                        {
+                            return Attempt::result($this->response);
+                        }
+                    });
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($expected, $response);
+            });
+    }
+
+    public function testRouteToServiceShortcut(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $expected = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->route(Route::get(
+                        '/foo',
+                        Services::responseHandler,
+                    ))
                     ->service(Services::responseHandler, static fn() => new class($expected) {
                         public function __construct(private $response)
                         {

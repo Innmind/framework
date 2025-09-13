@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `Innmind\Framework\Http\Route`
+
 ### Changed
 
 - Requires `innmind/foundation:~1.9`
