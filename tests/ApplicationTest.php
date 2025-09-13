@@ -1046,7 +1046,7 @@ class ApplicationTest extends TestCase
                     ->notFoundRequestHandler(function($request) use ($protocol, $expected) {
                         $this->assertSame($protocol, $request->protocolVersion());
 
-                        return $expected;
+                        return Attempt::result($expected);
                     });
 
                 $response = $app->run(ServerRequest::of(

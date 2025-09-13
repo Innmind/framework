@@ -25,6 +25,7 @@ use Innmind\Immutable\{
     Maybe,
     Sequence,
     SideEffect,
+    Attempt,
 };
 
 /**
@@ -39,7 +40,7 @@ final class Http implements Implementation
      * @param \Closure(OperatingSystem, Environment): Builder $container
      * @param Sequence<callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>> $routes
      * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoute
-     * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> $notFound
+     * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response>> $notFound
      */
     private function __construct(
         private OperatingSystem $os,
@@ -56,7 +57,7 @@ final class Http implements Implementation
      */
     public static function of(OperatingSystem $os, Environment $env): self
     {
-        /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> */
+        /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response>> */
         $notFound = Maybe::nothing();
 
         return new self(

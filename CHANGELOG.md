@@ -14,6 +14,7 @@
 - `Innmind\Framework\Application::route()` callable must now return a `Innmind\Router\Component`
 - `Innmind\Framework\Application::route()` callable first parameter now is a `Innmint\Router\Pipe`
 - `Innmind\Framework\Application::route()` first parameter must now be expressed via a component inside the callable
+- `Innminf\Framework\Application::notFoundRequestHandler()` callable must now return an `Innmind\Immutable\Attempt<Response>`
 
 ### Removed
 

@@ -99,7 +99,7 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
-     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
+     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response> $handle
      *
      * @return self<I, O>
      */

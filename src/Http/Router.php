@@ -29,7 +29,7 @@ final class Router
 {
     /**
      * @param Sequence<Component<SideEffect, Response>> $routes
-     * @param Maybe<\Closure(ServerRequest): Response> $notFound
+     * @param Maybe<\Closure(ServerRequest): Attempt<Response>> $notFound
      */
     public function __construct(
         private Sequence $routes,
@@ -47,7 +47,7 @@ final class Router
                 ->otherwise(Respond::withHttpErrors())
                 ->or(Handle::via(
                     fn($request, SideEffect $_) => $this->notFound->match(
-                        static fn($handle) => Attempt::result($handle($request)),
+                        static fn($handle) => $handle($request),
                         static fn() => Attempt::result(Response::of(
                             StatusCode::notFound,
                             $request->protocolVersion(),
