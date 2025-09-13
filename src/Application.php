@@ -3,7 +3,6 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework;
 
-use Innmind\Framework\Http\RequestHandler;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\CLI\{
     Environment as CliEnv,
@@ -154,18 +153,6 @@ final class Application
     public function route(callable $handle): self
     {
         return new self($this->app->route($handle));
-    }
-
-    /**
-     * @psalm-mutation-free
-     *
-     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
-     *
-     * @return self<I, O>
-     */
-    public function mapRequestHandler(callable $map): self
-    {
-        return new self($this->app->mapRequestHandler($map));
     }
 
     /**

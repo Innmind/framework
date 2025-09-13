@@ -22,6 +22,8 @@
 - `Innmind\Framework\Http\To`
 - `Innmind\Framework\Http\Routes`
 - `Innmind\Framework\Application::appendRoutes()`
+- `Innmind\Framework\Application::mapRequestHandler()`
+- `Innmind\Framework\Http\RequestHandler`
 
 ### Fixed
 

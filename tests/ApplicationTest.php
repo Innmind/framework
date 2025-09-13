@@ -9,7 +9,6 @@ use Innmind\Framework\{
     Environment,
     Middleware\Optional,
     Middleware\LoadDotEnv,
-    Http\RequestHandler,
     Http\Route,
 };
 use Innmind\OperatingSystem\Factory;
@@ -26,9 +25,7 @@ use Innmind\Http\{
     Method,
     Response\StatusCode,
     ProtocolVersion,
-    Header\ContentType,
 };
-use Innmind\MediaType\MediaType;
 use Innmind\Url\{
     Url,
     Path,
@@ -1024,62 +1021,6 @@ class ApplicationTest extends TestCase
                 ));
 
                 $this->assertSame($expected, $response);
-            });
-    }
-
-    public function testMapRequestHandler(): BlackBox\Proof
-    {
-        return $this
-            ->forAll(
-                FUrl::any(),
-                Set::of(...Method::cases()),
-                Set::of(...ProtocolVersion::cases()),
-                Set::sequence(
-                    Set::compose(
-                        static fn($key, $value) => [$key, $value],
-                        Set::strings()->randomize(),
-                        Set::strings(),
-                    ),
-                )->between(0, 10),
-            )
-            ->prove(function($url, $method, $protocol, $variables) {
-                $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->mapRequestHandler(static fn($inner) => new class($inner) implements RequestHandler {
-                        public function __construct(
-                            private $inner,
-                        ) {
-                        }
-
-                        public function __invoke(ServerRequest $request): Response
-                        {
-                            $response = ($this->inner)($request);
-
-                            return Response::of(
-                                $response->statusCode(),
-                                $response->protocolVersion(),
-                                $response->headers()(ContentType::of(new MediaType(
-                                    'application',
-                                    'octet-stream',
-                                ))),
-                            );
-                        }
-                    });
-
-                $response = $app->run(ServerRequest::of(
-                    $url,
-                    $method,
-                    $protocol,
-                ));
-
-                $this->assertSame(StatusCode::notFound, $response->statusCode());
-                $this->assertSame($protocol, $response->protocolVersion());
-                $this->assertSame(
-                    'Content-Type: application/octet-stream',
-                    $response->headers()->get('content-type')->match(
-                        static fn($header) => $header->toString(),
-                        static fn() => null,
-                    ),
-                );
             });
     }
 

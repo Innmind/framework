@@ -25,7 +25,7 @@ use Innmind\Immutable\{
 /**
  * @internal
  */
-final class Router implements RequestHandler
+final class Router
 {
     /**
      * @param Sequence<Component<SideEffect, Response>> $routes
@@ -37,7 +37,6 @@ final class Router implements RequestHandler
     ) {
     }
 
-    #[\Override]
     public function __invoke(ServerRequest $request): Response
     {
         /**

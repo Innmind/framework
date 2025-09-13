@@ -7,7 +7,6 @@ use Innmind\Framework\{
     Environment,
     Application\Implementation,
     Http\Router,
-    Http\RequestHandler,
 };
 use Innmind\CLI\{
     Environment as CliEnv,
@@ -48,7 +47,6 @@ final class Http implements Implementation
      * @param \Closure(OperatingSystem, Environment): array{OperatingSystem, Environment} $map
      * @param \Closure(OperatingSystem, Environment): Builder $container
      * @param Sequence<callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>> $routes
-     * @param \Closure(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
      * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoute
      * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> $notFound
      */
@@ -57,7 +55,6 @@ final class Http implements Implementation
         private \Closure $map,
         private \Closure $container,
         private Sequence $routes,
-        private \Closure $mapRequestHandler,
         private \Closure $mapRoute,
         private Maybe $notFound,
     ) {
@@ -76,7 +73,6 @@ final class Http implements Implementation
             static fn(OperatingSystem $os, Environment $env) => [$os, $env],
             static fn() => Builder::new(),
             Sequence::lazyStartingWith(),
-            static fn(RequestHandler $handler) => $handler,
             static fn(Component $component) => $component,
             $notFound,
         );
@@ -100,7 +96,6 @@ final class Http implements Implementation
             },
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
             $this->mapRoute,
             $this->notFound,
         );
@@ -124,7 +119,6 @@ final class Http implements Implementation
             },
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
             $this->mapRoute,
             $this->notFound,
         );
@@ -146,7 +140,6 @@ final class Http implements Implementation
                 static fn($service) => $definition($service, $os, $env),
             ),
             $this->routes,
-            $this->mapRequestHandler,
             $this->mapRoute,
             $this->notFound,
         );
@@ -181,36 +174,6 @@ final class Http implements Implementation
             $this->map,
             $this->container,
             ($this->routes)($handle),
-            $this->mapRequestHandler,
-            $this->mapRoute,
-            $this->notFound,
-        );
-    }
-
-    /**
-     * @psalm-mutation-free
-     */
-    #[\Override]
-    public function mapRequestHandler(callable $map): self
-    {
-        $previous = $this->mapRequestHandler;
-
-        return new self(
-            $this->os,
-            $this->map,
-            $this->container,
-            $this->routes,
-            static fn(
-                RequestHandler $handler,
-                Container $container,
-                OperatingSystem $os,
-                Environment $env,
-            ) => $map(
-                $previous($handler, $container, $os, $env),
-                $container,
-                $os,
-                $env,
-            ),
             $this->mapRoute,
             $this->notFound,
         );
@@ -229,7 +192,6 @@ final class Http implements Implementation
             $this->map,
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
             static fn($component, $get) => $map(
                 $previous($component, $get),
                 $get,
@@ -249,7 +211,6 @@ final class Http implements Implementation
             $this->map,
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
             $this->mapRoute,
             Maybe::just($handle),
         );
@@ -262,7 +223,6 @@ final class Http implements Implementation
         $container = $this->container;
         $routes = $this->routes;
         $notFound = $this->notFound;
-        $mapRequestHandler = $this->mapRequestHandler;
         $mapRoute = $this->mapRoute;
 
         $run = Commands::of(Serve::of(
@@ -272,7 +232,6 @@ final class Http implements Implementation
                 $container,
                 $routes,
                 $notFound,
-                $mapRequestHandler,
                 $mapRoute,
             ): Response {
                 $env = Environment::http($request->environment());
@@ -293,9 +252,8 @@ final class Http implements Implementation
                         ),
                     ),
                 );
-                $handle = $mapRequestHandler($router, $container, $os, $env);
 
-                return $handle($request);
+                return $router($request);
             },
         ));
 

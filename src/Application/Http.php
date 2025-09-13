@@ -6,7 +6,6 @@ namespace Innmind\Framework\Application;
 use Innmind\Framework\{
     Environment,
     Http\Router,
-    Http\RequestHandler,
 };
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\{
@@ -39,7 +38,6 @@ final class Http implements Implementation
      *
      * @param \Closure(OperatingSystem, Environment): Builder $container
      * @param Sequence<callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>> $routes
-     * @param \Closure(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
      * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoute
      * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> $notFound
      */
@@ -48,7 +46,6 @@ final class Http implements Implementation
         private Environment $env,
         private \Closure $container,
         private Sequence $routes,
-        private \Closure $mapRequestHandler,
         private \Closure $mapRoute,
         private Maybe $notFound,
     ) {
@@ -67,7 +64,6 @@ final class Http implements Implementation
             $env,
             static fn() => Builder::new(),
             Sequence::lazyStartingWith(),
-            static fn(RequestHandler $handler) => $handler,
             static fn(Component $component) => $component,
             $notFound,
         );
@@ -85,7 +81,6 @@ final class Http implements Implementation
             $map($this->env, $this->os),
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
             $this->mapRoute,
             $this->notFound,
         );
@@ -103,7 +98,6 @@ final class Http implements Implementation
             $this->env,
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
             $this->mapRoute,
             $this->notFound,
         );
@@ -125,7 +119,6 @@ final class Http implements Implementation
                 static fn($service) => $definition($service, $os, $env),
             ),
             $this->routes,
-            $this->mapRequestHandler,
             $this->mapRoute,
             $this->notFound,
         );
@@ -160,36 +153,6 @@ final class Http implements Implementation
             $this->env,
             $this->container,
             ($this->routes)($handle),
-            $this->mapRequestHandler,
-            $this->mapRoute,
-            $this->notFound,
-        );
-    }
-
-    /**
-     * @psalm-mutation-free
-     */
-    #[\Override]
-    public function mapRequestHandler(callable $map): self
-    {
-        $previous = $this->mapRequestHandler;
-
-        return new self(
-            $this->os,
-            $this->env,
-            $this->container,
-            $this->routes,
-            static fn(
-                RequestHandler $handler,
-                Container $container,
-                OperatingSystem $os,
-                Environment $env,
-            ) => $map(
-                $previous($handler, $container, $os, $env),
-                $container,
-                $os,
-                $env,
-            ),
             $this->mapRoute,
             $this->notFound,
         );
@@ -208,7 +171,6 @@ final class Http implements Implementation
             $this->env,
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
             static fn($component, $get) => $map(
                 $previous($component, $get),
                 $get,
@@ -228,7 +190,6 @@ final class Http implements Implementation
             $this->env,
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
             $this->mapRoute,
             Maybe::just($handle),
         );
@@ -257,8 +218,7 @@ final class Http implements Implementation
                 ),
             ),
         );
-        $handle = ($this->mapRequestHandler)($router, $container, $this->os, $this->env);
 
-        return $handle($input);
+        return $router($input);
     }
 }
