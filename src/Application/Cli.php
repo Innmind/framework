@@ -181,6 +181,15 @@ final class Cli implements Implementation
         return $this;
     }
 
+    /**
+     * @psalm-mutation-free
+     */
+    #[\Override]
+    public function recoverRouteError(callable $recover): self
+    {
+        return $this;
+    }
+
     #[\Override]
     public function run($input)
     {

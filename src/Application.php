@@ -202,6 +202,18 @@ final class Application
     }
 
     /**
+     * @psalm-mutation-free
+     *
+     * @param callable(ServerRequest, \Throwable, Container): Attempt<Response> $recover
+     *
+     * @return self<I, O>
+     */
+    public function recoverRouteError(callable $recover): self
+    {
+        return new self($this->app->recoverRouteError($recover));
+    }
+
+    /**
      * @param I $input
      *
      * @return O

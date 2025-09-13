@@ -41,6 +41,7 @@ final class Http implements Implementation
      * @param Sequence<callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>> $routes
      * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoute
      * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response>> $notFound
+     * @param \Closure(ServerRequest, \Throwable, Container): Attempt<Response> $recover
      */
     private function __construct(
         private OperatingSystem $os,
@@ -49,6 +50,7 @@ final class Http implements Implementation
         private Sequence $routes,
         private \Closure $mapRoute,
         private Maybe $notFound,
+        private \Closure $recover,
     ) {
     }
 
@@ -67,6 +69,7 @@ final class Http implements Implementation
             Sequence::lazyStartingWith(),
             static fn(Component $component) => $component,
             $notFound,
+            static fn(ServerRequest $request, \Throwable $e) => Attempt::error($e),
         );
     }
 
@@ -84,6 +87,7 @@ final class Http implements Implementation
             $this->routes,
             $this->mapRoute,
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -101,6 +105,7 @@ final class Http implements Implementation
             $this->routes,
             $this->mapRoute,
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -122,6 +127,7 @@ final class Http implements Implementation
             $this->routes,
             $this->mapRoute,
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -156,6 +162,7 @@ final class Http implements Implementation
             ($this->routes)($handle),
             $this->mapRoute,
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -177,6 +184,7 @@ final class Http implements Implementation
                 $get,
             ),
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -193,6 +201,28 @@ final class Http implements Implementation
             $this->routes,
             $this->mapRoute,
             Maybe::just($handle),
+            $this->recover,
+        );
+    }
+
+    /**
+     * @psalm-mutation-free
+     */
+    #[\Override]
+    public function recoverRouteError(callable $recover): self
+    {
+        $previous = $this->recover;
+
+        return new self(
+            $this->os,
+            $this->env,
+            $this->container,
+            $this->routes,
+            $this->mapRoute,
+            $this->notFound,
+            static fn($request, $e, $container) => $previous($request, $e, $container)->recover(
+                static fn($e) => $recover($request, $e, $container),
+            ),
         );
     }
 
@@ -203,6 +233,7 @@ final class Http implements Implementation
         $os = $this->os;
         $env = $this->env;
         $mapRoute = $this->mapRoute;
+        $recover = $this->recover;
         $pipe = Pipe::new();
         $routes = $this
             ->routes
@@ -218,6 +249,7 @@ final class Http implements Implementation
                     $env,
                 ),
             ),
+            static fn($request, $e) => $recover($request, $e, $container),
         );
 
         return $router($input);

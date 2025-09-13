@@ -1203,4 +1203,35 @@ class ApplicationTest extends TestCase
                 $this->assertSame($responseB, $response);
             });
     }
+
+    public function testRecoverRouteError(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $expected = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->service(Services::serviceA, static fn() => static fn() => Attempt::error(new \Exception))
+                    ->recoverRouteError(static fn() => Attempt::result($expected))
+                    ->routes(Routes::class);
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($expected, $response);
+            });
+    }
 }

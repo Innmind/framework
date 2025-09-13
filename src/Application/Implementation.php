@@ -106,6 +106,15 @@ interface Implementation
     public function routeNotFound(callable $handle): self;
 
     /**
+     * @psalm-mutation-free
+     *
+     * @param callable(ServerRequest, \Throwable, Container): Attempt<Response> $recover
+     *
+     * @return self<I, O>
+     */
+    public function recoverRouteError(callable $recover): self;
+
+    /**
      * @param I $input
      *
      * @return O
