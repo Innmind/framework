@@ -5,6 +5,7 @@
 ### Added
 
 - `Innmind\Framework\Http\Route`
+- `Innmind\Framework\Application::mapRoute()`
 
 ### Changed
 

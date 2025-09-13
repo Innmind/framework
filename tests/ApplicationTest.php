@@ -1158,4 +1158,54 @@ class ApplicationTest extends TestCase
                 $this->assertSame($protocol, $response->protocolVersion());
             });
     }
+
+    public function testMapRoute(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $response = Response::of(StatusCode::ok, $protocol);
+                $expected = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->route(Route::get(
+                        '/foo',
+                        Services::responseHandler,
+                    ))
+                    ->mapRoute(fn($component) => $component->map(
+                        function($out) use ($response, $expected) {
+                            $this->assertSame($out, $response);
+
+                            return $expected;
+                        },
+                    ))
+                    ->service(Services::responseHandler, static fn() => new class($response) {
+                        public function __construct(private $response)
+                        {
+                        }
+
+                        public function __invoke()
+                        {
+                            return Attempt::result($this->response);
+                        }
+                    });
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($expected, $response);
+            });
+    }
 }

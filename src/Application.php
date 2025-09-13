@@ -171,6 +171,18 @@ final class Application
     /**
      * @psalm-mutation-free
      *
+     * @param callable(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $map
+     *
+     * @return self<I, O>
+     */
+    public function mapRoute(callable $map): self
+    {
+        return new self($this->app->mapRoute($map));
+    }
+
+    /**
+     * @psalm-mutation-free
+     *
      * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
      *
      * @return self<I, O>
