@@ -25,30 +25,36 @@ use Innmind\Immutable\{
 /**
  * @internal
  */
-final class Router implements RequestHandler
+final class Router
 {
     /**
      * @param Sequence<Component<SideEffect, Response>> $routes
-     * @param Maybe<\Closure(ServerRequest): Response> $notFound
+     * @param Maybe<\Closure(ServerRequest): Attempt<Response>> $notFound
+     * @param \Closure(ServerRequest, \Throwable): Attempt<Response> $recover
      */
     public function __construct(
         private Sequence $routes,
         private Maybe $notFound,
+        private \Closure $recover,
     ) {
     }
 
-    #[\Override]
     public function __invoke(ServerRequest $request): Response
     {
+        $recover = $this->recover;
+
         /**
          * @psalm-suppress MixedArgumentTypeCoercion
          */
         $route = Route::of(
             Any::from($this->routes)
                 ->otherwise(Respond::withHttpErrors())
+                ->otherwise(static fn($e) => Handle::via(
+                    static fn($request) => $recover($request, $e),
+                ))
                 ->or(Handle::via(
                     fn($request, SideEffect $_) => $this->notFound->match(
-                        static fn($handle) => Attempt::result($handle($request)),
+                        static fn($handle) => $handle($request),
                         static fn() => Attempt::result(Response::of(
                             StatusCode::notFound,
                             $request->protocolVersion(),

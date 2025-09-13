@@ -9,8 +9,7 @@ use Innmind\Framework\{
     Environment,
     Middleware\Optional,
     Middleware\LoadDotEnv,
-    Http\RequestHandler,
-    Http\To,
+    Http\Route,
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
@@ -20,20 +19,13 @@ use Innmind\CLI\{
     Console,
 };
 use Innmind\DI\Service;
-use Innmind\Router\{
-    Endpoint,
-    Method as RouterMethod,
-    Handle,
-};
 use Innmind\Http\{
     ServerRequest,
     Response,
     Method,
     Response\StatusCode,
     ProtocolVersion,
-    Header\ContentType,
 };
-use Innmind\MediaType\MediaType;
 use Innmind\Url\{
     Url,
     Path,
@@ -55,6 +47,20 @@ enum Services implements Service
     case service;
     case serviceA;
     case serviceB;
+}
+
+enum Routes implements Route\Reference
+{
+    case a;
+    case b;
+
+    public function route(): callable
+    {
+        return match ($this) {
+            self::a => Route::get('/foo', Services::serviceA),
+            self::b => Route::get('/bar', Services::serviceB),
+        };
+    }
 }
 
 class ApplicationTest extends TestCase
@@ -850,24 +856,26 @@ class ApplicationTest extends TestCase
                 $responseB = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->appendRoutes(fn($routes) => $routes->add(
-                        RouterMethod::get()
-                            ->pipe(Endpoint::of('/foo'))
-                            ->pipe(Handle::via(function($request) use ($protocol, $responseA) {
+                    ->route(
+                        fn($pipe) => $pipe
+                            ->get()
+                            ->endpoint('/foo')
+                            ->handle(function($request) use ($protocol, $responseA) {
                                 $this->assertSame($protocol, $request->protocolVersion());
 
                                 return Attempt::result($responseA);
-                            })),
-                    ))
-                    ->appendRoutes(fn($routes) => $routes->add(
-                        RouterMethod::get()
-                            ->pipe(Endpoint::of('/bar'))
-                            ->pipe(Handle::via(function($request) use ($protocol, $responseB) {
-                                $this->assertSame($protocol, $request->protocolVersion());
+                            })
+                            ->or(
+                                $pipe
+                                    ->get()
+                                    ->endpoint('/bar')
+                                    ->handle(function($request) use ($protocol, $responseB) {
+                                        $this->assertSame($protocol, $request->protocolVersion());
 
-                                return Attempt::result($responseB);
-                            })),
-                    ));
+                                        return Attempt::result($responseB);
+                                    }),
+                            ),
+                    );
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
@@ -905,16 +913,26 @@ class ApplicationTest extends TestCase
                 $responseB = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->route('GET /foo', fn() => Handle::via(function($request) use ($protocol, $responseA) {
-                        $this->assertSame($protocol, $request->protocolVersion());
+                    ->route(
+                        fn($pipe) => $pipe
+                            ->get()
+                            ->endpoint('/foo')
+                            ->handle(function($request) use ($protocol, $responseA) {
+                                $this->assertSame($protocol, $request->protocolVersion());
 
-                        return Attempt::result($responseA);
-                    }))
-                    ->route('GET /bar', fn() => Handle::via(function($request) use ($protocol, $responseB) {
-                        $this->assertSame($protocol, $request->protocolVersion());
+                                return Attempt::result($responseA);
+                            }),
+                    )
+                    ->route(
+                        fn($pipe) => $pipe
+                            ->post()
+                            ->endpoint('/bar')
+                            ->handle(function($request) use ($protocol, $responseB) {
+                                $this->assertSame($protocol, $request->protocolVersion());
 
-                        return Attempt::result($responseB);
-                    }));
+                                return Attempt::result($responseB);
+                            }),
+                    );
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
@@ -926,7 +944,7 @@ class ApplicationTest extends TestCase
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/bar'),
-                    Method::get,
+                    Method::post,
                     $protocol,
                 ));
 
@@ -951,7 +969,12 @@ class ApplicationTest extends TestCase
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->route('GET /foo', To::service(Services::responseHandler))
+                    ->route(
+                        static fn($pipe, $container) => $pipe
+                            ->get()
+                            ->endpoint('/foo')
+                            ->handle($container(Services::responseHandler)),
+                    )
                     ->service(Services::responseHandler, static fn() => new class($expected) {
                         public function __construct(private $response)
                         {
@@ -973,11 +996,10 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testMapRequestHandler(): BlackBox\Proof
+    public function testRouteToServiceShortcut(): BlackBox\Proof
     {
         return $this
             ->forAll(
-                FUrl::any(),
                 Set::of(...Method::cases()),
                 Set::of(...ProtocolVersion::cases()),
                 Set::sequence(
@@ -988,44 +1010,32 @@ class ApplicationTest extends TestCase
                     ),
                 )->between(0, 10),
             )
-            ->prove(function($url, $method, $protocol, $variables) {
+            ->prove(function($method, $protocol, $variables) {
+                $expected = Response::of(StatusCode::ok, $protocol);
+
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->mapRequestHandler(static fn($inner) => new class($inner) implements RequestHandler {
-                        public function __construct(
-                            private $inner,
-                        ) {
+                    ->route(Route::{$method->name}(
+                        '/foo',
+                        Services::responseHandler,
+                    ))
+                    ->service(Services::responseHandler, static fn() => new class($expected) {
+                        public function __construct(private $response)
+                        {
                         }
 
-                        public function __invoke(ServerRequest $request): Response
+                        public function __invoke()
                         {
-                            $response = ($this->inner)($request);
-
-                            return Response::of(
-                                $response->statusCode(),
-                                $response->protocolVersion(),
-                                $response->headers()(ContentType::of(new MediaType(
-                                    'application',
-                                    'octet-stream',
-                                ))),
-                            );
+                            return Attempt::result($this->response);
                         }
                     });
 
                 $response = $app->run(ServerRequest::of(
-                    $url,
+                    Url::of('/foo'),
                     $method,
                     $protocol,
                 ));
 
-                $this->assertSame(StatusCode::notFound, $response->statusCode());
-                $this->assertSame($protocol, $response->protocolVersion());
-                $this->assertSame(
-                    'Content-Type: application/octet-stream',
-                    $response->headers()->get('content-type')->match(
-                        static fn($header) => $header->toString(),
-                        static fn() => null,
-                    ),
-                );
+                $this->assertSame($expected, $response);
             });
     }
 
@@ -1048,10 +1058,10 @@ class ApplicationTest extends TestCase
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->notFoundRequestHandler(function($request) use ($protocol, $expected) {
+                    ->routeNotFound(function($request) use ($protocol, $expected) {
                         $this->assertSame($protocol, $request->protocolVersion());
 
-                        return $expected;
+                        return Attempt::result($expected);
                     });
 
                 $response = $app->run(ServerRequest::of(
@@ -1079,16 +1089,20 @@ class ApplicationTest extends TestCase
             )
             ->prove(function($protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->appendRoutes(static fn($routes) => $routes->add(
-                        Endpoint::of('/foo')
-                            ->pipe(RouterMethod::get())
-                            ->pipe(Handle::of(static fn($request) => Attempt::result(
-                                Response::of(
-                                    StatusCode::ok,
-                                    $request->protocolVersion(),
-                                ),
-                            ))),
-                    ));
+                    ->route(
+                        static fn($pipe) => $pipe
+                            ->endpoint('/foo')
+                            ->any(
+                                $pipe
+                                    ->get()
+                                    ->handle(static fn($request) => Attempt::result(
+                                        Response::of(
+                                            StatusCode::ok,
+                                            $request->protocolVersion(),
+                                        ),
+                                    )),
+                            ),
+                    );
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
@@ -1098,6 +1112,127 @@ class ApplicationTest extends TestCase
 
                 $this->assertSame(405, $response->statusCode()->toInt());
                 $this->assertSame($protocol, $response->protocolVersion());
+            });
+    }
+
+    public function testMapRoute(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $response = Response::of(StatusCode::ok, $protocol);
+                $expected = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->route(Route::get(
+                        '/foo',
+                        Services::responseHandler,
+                    ))
+                    ->mapRoute(fn($component) => $component->map(
+                        function($out) use ($response, $expected) {
+                            $this->assertSame($out, $response);
+
+                            return $expected;
+                        },
+                    ))
+                    ->service(Services::responseHandler, static fn() => new class($response) {
+                        public function __construct(private $response)
+                        {
+                        }
+
+                        public function __invoke()
+                        {
+                            return Attempt::result($this->response);
+                        }
+                    });
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($expected, $response);
+            });
+    }
+
+    public function testRoutesAsEnumCases(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $responseA = Response::of(StatusCode::ok, $protocol);
+                $responseB = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->service(Services::serviceA, static fn() => static fn() => Attempt::result($responseA))
+                    ->service(Services::serviceB, static fn() => static fn() => Attempt::result($responseB))
+                    ->routes(Routes::class);
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($responseA, $response);
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/bar'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($responseB, $response);
+            });
+    }
+
+    public function testRecoverRouteError(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $expected = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->service(Services::serviceA, static fn() => static fn() => Attempt::error(new \Exception))
+                    ->recoverRouteError(static fn() => Attempt::result($expected))
+                    ->routes(Routes::class);
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($expected, $response);
             });
     }
 }

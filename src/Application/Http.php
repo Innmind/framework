@@ -5,9 +5,7 @@ namespace Innmind\Framework\Application;
 
 use Innmind\Framework\{
     Environment,
-    Http\Routes,
     Http\Router,
-    Http\RequestHandler,
 };
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\{
@@ -16,8 +14,8 @@ use Innmind\DI\{
     Service,
 };
 use Innmind\Router\{
-    Method,
-    Endpoint,
+    Component,
+    Pipe,
 };
 use Innmind\Http\{
     ServerRequest,
@@ -26,6 +24,8 @@ use Innmind\Http\{
 use Innmind\Immutable\{
     Maybe,
     Sequence,
+    SideEffect,
+    Attempt,
 };
 
 /**
@@ -38,17 +38,19 @@ final class Http implements Implementation
      * @psalm-mutation-free
      *
      * @param \Closure(OperatingSystem, Environment): Builder $container
-     * @param Sequence<callable(Routes, Container, OperatingSystem, Environment): Routes> $routes
-     * @param \Closure(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $mapRequestHandler
-     * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> $notFound
+     * @param Sequence<callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>> $routes
+     * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoute
+     * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response>> $notFound
+     * @param \Closure(ServerRequest, \Throwable, Container): Attempt<Response> $recover
      */
     private function __construct(
         private OperatingSystem $os,
         private Environment $env,
         private \Closure $container,
         private Sequence $routes,
-        private \Closure $mapRequestHandler,
+        private \Closure $mapRoute,
         private Maybe $notFound,
+        private \Closure $recover,
     ) {
     }
 
@@ -57,16 +59,17 @@ final class Http implements Implementation
      */
     public static function of(OperatingSystem $os, Environment $env): self
     {
-        /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Response> */
+        /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response>> */
         $notFound = Maybe::nothing();
 
         return new self(
             $os,
             $env,
             static fn() => Builder::new(),
-            Sequence::of(),
-            static fn(RequestHandler $handler) => $handler,
+            Sequence::lazyStartingWith(),
+            static fn(Component $component) => $component,
             $notFound,
+            static fn(ServerRequest $request, \Throwable $e) => Attempt::error($e),
         );
     }
 
@@ -82,8 +85,9 @@ final class Http implements Implementation
             $map($this->env, $this->os),
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
+            $this->mapRoute,
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -99,8 +103,9 @@ final class Http implements Implementation
             $this->env,
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
+            $this->mapRoute,
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -120,8 +125,9 @@ final class Http implements Implementation
                 static fn($service) => $definition($service, $os, $env),
             ),
             $this->routes,
-            $this->mapRequestHandler,
+            $this->mapRoute,
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -147,54 +153,16 @@ final class Http implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
-    public function route(string $pattern, callable $handle): self
-    {
-        /**
-         * @psalm-suppress PossiblyUndefinedArrayOffset Todo better typing
-         * @var literal-string $path
-         */
-        [$method, $path] = \explode(' ', $pattern, 2);
-
-        $method = match ($method) {
-            'get', 'GET' => Method::get(),
-            'post', 'POST' => Method::post(),
-            'put', 'PUT' => Method::put(),
-            'patch', 'PATCH' => Method::patch(),
-            'delete', 'DELETE' => Method::delete(),
-            'options', 'OPTIONS' => Method::options(),
-            'trace', 'TRACE' => Method::trace(),
-            'connect', 'CONNECT' => Method::connect(),
-            'head', 'HEAD' => Method::head(),
-            'link', 'LINK' => Method::link(),
-            'unlink', 'UNLINK' => Method::unlink(),
-        };
-
-        /**
-         * @psalm-suppress MixedArgumentTypeCoercion
-         * @psalm-suppress InvalidArgument
-         */
-        return $this->appendRoutes(
-            static fn($routes, $container, $os, $env) => $routes->add(
-                $method
-                    ->pipe(Endpoint::of($path))
-                    ->pipe($handle($container, $os, $env)),
-            ),
-        );
-    }
-
-    /**
-     * @psalm-mutation-free
-     */
-    #[\Override]
-    public function appendRoutes(callable $append): self
+    public function route(callable $handle): self
     {
         return new self(
             $this->os,
             $this->env,
             $this->container,
-            ($this->routes)($append),
-            $this->mapRequestHandler,
+            ($this->routes)($handle),
+            $this->mapRoute,
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -202,27 +170,21 @@ final class Http implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
-    public function mapRequestHandler(callable $map): self
+    public function mapRoute(callable $map): self
     {
-        $previous = $this->mapRequestHandler;
+        $previous = $this->mapRoute;
 
         return new self(
             $this->os,
             $this->env,
             $this->container,
             $this->routes,
-            static fn(
-                RequestHandler $handler,
-                Container $container,
-                OperatingSystem $os,
-                Environment $env,
-            ) => $map(
-                $previous($handler, $container, $os, $env),
-                $container,
-                $os,
-                $env,
+            static fn($component, $get) => $map(
+                $previous($component, $get),
+                $get,
             ),
             $this->notFound,
+            $this->recover,
         );
     }
 
@@ -230,15 +192,37 @@ final class Http implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
-    public function notFoundRequestHandler(callable $handle): self
+    public function routeNotFound(callable $handle): self
     {
         return new self(
             $this->os,
             $this->env,
             $this->container,
             $this->routes,
-            $this->mapRequestHandler,
+            $this->mapRoute,
             Maybe::just($handle),
+            $this->recover,
+        );
+    }
+
+    /**
+     * @psalm-mutation-free
+     */
+    #[\Override]
+    public function recoverRouteError(callable $recover): self
+    {
+        $previous = $this->recover;
+
+        return new self(
+            $this->os,
+            $this->env,
+            $this->container,
+            $this->routes,
+            $this->mapRoute,
+            $this->notFound,
+            static fn($request, $e, $container) => $previous($request, $e, $container)->recover(
+                static fn($e) => $recover($request, $e, $container),
+            ),
         );
     }
 
@@ -248,15 +232,13 @@ final class Http implements Implementation
         $container = ($this->container)($this->os, $this->env)->build();
         $os = $this->os;
         $env = $this->env;
-        $routes = Sequence::lazyStartingWith($this->routes)
-            ->flatMap(static fn($routes) => $routes)
-            ->map(static fn($provide) => $provide(
-                Routes::lazy(),
-                $container,
-                $os,
-                $env,
-            ))
-            ->flatMap(static fn($routes) => $routes->toSequence());
+        $mapRoute = $this->mapRoute;
+        $recover = $this->recover;
+        $pipe = Pipe::new();
+        $routes = $this
+            ->routes
+            ->map(static fn($handle) => $handle($pipe, $container, $os, $env))
+            ->map(static fn($component) => $mapRoute($component, $container));
         $router = new Router(
             $routes,
             $this->notFound->map(
@@ -267,9 +249,9 @@ final class Http implements Implementation
                     $env,
                 ),
             ),
+            static fn($request, $e) => $recover($request, $e, $container),
         );
-        $handle = ($this->mapRequestHandler)($router, $container, $this->os, $this->env);
 
-        return $handle($input);
+        return $router($input);
     }
 }

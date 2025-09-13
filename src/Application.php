@@ -3,10 +3,6 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework;
 
-use Innmind\Framework\Http\{
-    Routes,
-    RequestHandler,
-};
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\CLI\{
     Environment as CliEnv,
@@ -16,7 +12,10 @@ use Innmind\DI\{
     Container,
     Service,
 };
-use Innmind\Router\Component;
+use Innmind\Router\{
+    Component,
+    Pipe,
+};
 use Innmind\Http\{
     ServerRequest,
     Response,
@@ -147,50 +146,71 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param literal-string $pattern
-     * @param callable(Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
+     * @param Http\Route\Reference|callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */
-    public function route(string $pattern, callable $handle): self
+    public function route(Http\Route\Reference|callable $handle): self
     {
-        return new self($this->app->route($pattern, $handle));
+        if ($handle instanceof Http\Route\Reference) {
+            $handle = $handle->route();
+        }
+
+        return new self($this->app->route($handle));
     }
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
+     * @param class-string<Http\Route\Reference> $routes
      *
      * @return self<I, O>
      */
-    public function appendRoutes(callable $append): self
+    public function routes(string $routes): self
     {
-        return new self($this->app->appendRoutes($append));
+        $self = $this;
+
+        foreach ($routes::cases() as $route) {
+            $self = $self->route($route);
+        }
+
+        return $self;
     }
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
+     * @param callable(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $map
      *
      * @return self<I, O>
      */
-    public function mapRequestHandler(callable $map): self
+    public function mapRoute(callable $map): self
     {
-        return new self($this->app->mapRequestHandler($map));
+        return new self($this->app->mapRoute($map));
     }
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
+     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response> $handle
      *
      * @return self<I, O>
      */
-    public function notFoundRequestHandler(callable $handle): self
+    public function routeNotFound(callable $handle): self
     {
-        return new self($this->app->notFoundRequestHandler($handle));
+        return new self($this->app->routeNotFound($handle));
+    }
+
+    /**
+     * @psalm-mutation-free
+     *
+     * @param callable(ServerRequest, \Throwable, Container): Attempt<Response> $recover
+     *
+     * @return self<I, O>
+     */
+    public function recoverRouteError(callable $recover): self
+    {
+        return new self($this->app->recoverRouteError($recover));
     }
 
     /**
