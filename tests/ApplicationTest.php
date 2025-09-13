@@ -1000,6 +1000,7 @@ class ApplicationTest extends TestCase
     {
         return $this
             ->forAll(
+                Set::of(...Method::cases()),
                 Set::of(...ProtocolVersion::cases()),
                 Set::sequence(
                     Set::compose(
@@ -1009,11 +1010,11 @@ class ApplicationTest extends TestCase
                     ),
                 )->between(0, 10),
             )
-            ->prove(function($protocol, $variables) {
+            ->prove(function($method, $protocol, $variables) {
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->route(Route::get(
+                    ->route(Route::{$method->name}(
                         '/foo',
                         Services::responseHandler,
                     ))
@@ -1030,7 +1031,7 @@ class ApplicationTest extends TestCase
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
-                    Method::get,
+                    $method,
                     $protocol,
                 ));
 
