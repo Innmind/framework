@@ -7,6 +7,7 @@
 - `Innmind\Framework\Http\Route`
 - `Innmind\Framework\Http\Route\Reference`
 - `Innmind\Framework\Application::mapRoute()`
+- `Innmind\Framework\Application::routes(class-string<Innmind\Framework\Http\Route\Reference>)`
 
 ### Changed
 

@@ -162,6 +162,24 @@ final class Application
     /**
      * @psalm-mutation-free
      *
+     * @param class-string<Http\Route\Reference> $routes
+     *
+     * @return self<I, O>
+     */
+    public function routes(string $routes): self
+    {
+        $self = $this;
+
+        foreach ($routes::cases() as $route) {
+            $self = $self->route($route);
+        }
+
+        return $self;
+    }
+
+    /**
+     * @psalm-mutation-free
+     *
      * @param callable(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $map
      *
      * @return self<I, O>

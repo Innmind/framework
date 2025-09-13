@@ -49,6 +49,20 @@ enum Services implements Service
     case serviceB;
 }
 
+enum Routes implements Route\Reference
+{
+    case a;
+    case b;
+
+    public function route(): callable
+    {
+        return match ($this) {
+            self::a => Route::get('/foo', Services::serviceA),
+            self::b => Route::get('/bar', Services::serviceB),
+        };
+    }
+}
+
 class ApplicationTest extends TestCase
 {
     use BlackBox;
@@ -1147,6 +1161,46 @@ class ApplicationTest extends TestCase
                 ));
 
                 $this->assertSame($expected, $response);
+            });
+    }
+
+    public function testRoutesAsEnumCases(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $responseA = Response::of(StatusCode::ok, $protocol);
+                $responseB = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->service(Services::serviceA, static fn() => static fn() => Attempt::result($responseA))
+                    ->service(Services::serviceB, static fn() => static fn() => Attempt::result($responseB))
+                    ->routes(Routes::class);
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($responseA, $response);
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/bar'),
+                    Method::get,
+                    $protocol,
+                ));
+
+                $this->assertSame($responseB, $response);
             });
     }
 }
