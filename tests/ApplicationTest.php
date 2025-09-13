@@ -1043,7 +1043,7 @@ class ApplicationTest extends TestCase
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->notFoundRequestHandler(function($request) use ($protocol, $expected) {
+                    ->routeNotFound(function($request) use ($protocol, $expected) {
                         $this->assertSame($protocol, $request->protocolVersion());
 
                         return Attempt::result($expected);

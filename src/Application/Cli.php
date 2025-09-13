@@ -176,7 +176,7 @@ final class Cli implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
-    public function notFoundRequestHandler(callable $handle): self
+    public function routeNotFound(callable $handle): self
     {
         return $this;
     }

@@ -174,9 +174,9 @@ final class Application
      *
      * @return self<I, O>
      */
-    public function notFoundRequestHandler(callable $handle): self
+    public function routeNotFound(callable $handle): self
     {
-        return new self($this->app->notFoundRequestHandler($handle));
+        return new self($this->app->routeNotFound($handle));
     }
 
     /**

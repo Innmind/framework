@@ -103,7 +103,7 @@ interface Implementation
      *
      * @return self<I, O>
      */
-    public function notFoundRequestHandler(callable $handle): self;
+    public function routeNotFound(callable $handle): self;
 
     /**
      * @param I $input
