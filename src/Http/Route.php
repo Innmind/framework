@@ -15,6 +15,7 @@ use Innmind\DI\{
 };
 use Innmind\Http\Response;
 use Innmind\UrlTemplate\Template;
+use Innmind\Immutable\Attempt;
 
 final class Route
 {
@@ -26,6 +27,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -46,6 +48,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -66,6 +69,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -86,6 +90,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -106,6 +111,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -126,6 +132,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -146,6 +153,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -166,6 +174,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -186,6 +195,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -206,6 +216,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
@@ -226,6 +237,7 @@ final class Route
      * @psalm-pure
      *
      * @param literal-string|Template|Alias $endpoint
+     * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
