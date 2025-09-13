@@ -146,12 +146,16 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
+     * @param Http\Route\Reference|callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */
-    public function route(callable $handle): self
+    public function route(Http\Route\Reference|callable $handle): self
     {
+        if ($handle instanceof Http\Route\Reference) {
+            $handle = $handle->route();
+        }
+
         return new self($this->app->route($handle));
     }
 
