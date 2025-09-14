@@ -3,8 +3,6 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework\Http\Route;
 
-use Innmind\Framework\Environment;
-use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\Container;
 use Innmind\Router\{
     Component,
@@ -19,7 +17,7 @@ use Innmind\Immutable\SideEffect;
 interface Reference extends \UnitEnum
 {
     /**
-     * @return callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     public function route(): callable;
 }

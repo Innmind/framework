@@ -46,7 +46,7 @@ final class Http implements Implementation
      *
      * @param \Closure(OperatingSystem, Environment): array{OperatingSystem, Environment} $map
      * @param \Closure(OperatingSystem, Environment): Builder $container
-     * @param Sequence<callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>> $routes
+     * @param Sequence<callable(Pipe, Container): Component<SideEffect, Response>> $routes
      * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoute
      * @param Maybe<callable(ServerRequest, Container): Attempt<Response>> $notFound
      * @param \Closure(ServerRequest, \Throwable, Container): Attempt<Response> $recover
@@ -271,7 +271,7 @@ final class Http implements Implementation
                 $container = $container($os, $env)->build();
                 $pipe = Pipe::new();
                 $routes = $routes
-                    ->map(static fn($handle) => $handle($pipe, $container, $os, $env))
+                    ->map(static fn($handle) => $handle($pipe, $container))
                     ->map(static fn($component) => $mapRoute($component, $container));
                 $router = new Router(
                     $routes,

@@ -146,7 +146,7 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param Http\Route\Reference|callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
+     * @param Http\Route\Reference|callable(Pipe, Container): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */

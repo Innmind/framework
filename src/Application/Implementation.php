@@ -81,7 +81,7 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
+     * @param callable(Pipe, Container): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */
