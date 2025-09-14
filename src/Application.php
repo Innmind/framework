@@ -122,7 +122,7 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Container, OperatingSystem, Environment): Command $command
+     * @param callable(Container): Command $command
      *
      * @return self<I, O>
      */
@@ -134,7 +134,7 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Command, Container, OperatingSystem, Environment): Command $map
+     * @param callable(Command, Container): Command $map
      *
      * @return self<I, O>
      */
@@ -146,7 +146,7 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param Http\Route\Reference|callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response> $handle
+     * @param Http\Route\Reference|callable(Pipe, Container): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */
@@ -192,7 +192,7 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response> $handle
+     * @param callable(ServerRequest, Container): Attempt<Response> $handle
      *
      * @return self<I, O>
      */

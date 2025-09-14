@@ -46,9 +46,9 @@ final class Http implements Implementation
      *
      * @param \Closure(OperatingSystem, Environment): array{OperatingSystem, Environment} $map
      * @param \Closure(OperatingSystem, Environment): Builder $container
-     * @param Sequence<callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>> $routes
+     * @param Sequence<callable(Pipe, Container): Component<SideEffect, Response>> $routes
      * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoute
-     * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response>> $notFound
+     * @param Maybe<callable(ServerRequest, Container): Attempt<Response>> $notFound
      * @param \Closure(ServerRequest, \Throwable, Container): Attempt<Response> $recover
      */
     private function __construct(
@@ -67,7 +67,7 @@ final class Http implements Implementation
      */
     public static function of(OperatingSystem $os): self
     {
-        /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response>> */
+        /** @var Maybe<callable(ServerRequest, Container): Attempt<Response>> */
         $notFound = Maybe::nothing();
 
         return new self(
@@ -271,7 +271,7 @@ final class Http implements Implementation
                 $container = $container($os, $env)->build();
                 $pipe = Pipe::new();
                 $routes = $routes
-                    ->map(static fn($handle) => $handle($pipe, $container, $os, $env))
+                    ->map(static fn($handle) => $handle($pipe, $container))
                     ->map(static fn($component) => $mapRoute($component, $container));
                 $router = new Router(
                     $routes,
@@ -279,8 +279,6 @@ final class Http implements Implementation
                         static fn($handle) => static fn(ServerRequest $request) => $handle(
                             $request,
                             $container,
-                            $os,
-                            $env,
                         ),
                     ),
                     static fn($request, $e) => $recover($request, $e, $container),

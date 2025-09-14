@@ -633,6 +633,7 @@ class ApplicationTest extends TestCase
             )
             ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
+                    ->service(Services::service, static fn($_, $__, $env) => $env)
                     ->map(new class implements Middleware {
                         public function __invoke(Application $app): Application
                         {
@@ -663,7 +664,7 @@ class ApplicationTest extends TestCase
                             });
                         }
                     })
-                    ->command(static fn($_, $__, $env) => new class($env) implements Command {
+                    ->command(static fn($get) => new class($get(Services::service)) implements Command {
                         public function __construct(
                             private $env,
                         ) {
@@ -722,9 +723,10 @@ class ApplicationTest extends TestCase
                 };
 
                 $app = Application::cli(Factory::build(), Environment::test($variables))
+                    ->service(Services::service, static fn($_, $__, $env) => $env)
                     ->map(Optional::of(Unknown::class, static fn() => throw new \Exception))
                     ->map(Optional::of($middleware::class, static fn() => $middleware))
-                    ->command(static fn($_, $__, $env) => new class($env) implements Command {
+                    ->command(static fn($get) => new class($get(Services::service)) implements Command {
                         public function __construct(
                             private $env,
                         ) {
@@ -773,8 +775,9 @@ class ApplicationTest extends TestCase
             )
             ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
+                    ->service(Services::service, static fn($_, $__, $env) => $env)
                     ->map(LoadDotEnv::at(Path::of(__DIR__.'/../fixtures/')))
-                    ->command(static fn($_, $__, $env) => new class($env) implements Command {
+                    ->command(static fn($get) => new class($get(Services::service)) implements Command {
                         public function __construct(
                             private $env,
                         ) {

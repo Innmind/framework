@@ -3,13 +3,11 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework\Cli\Command;
 
-use Innmind\Framework\Environment;
 use Innmind\CLI\{
     Command,
     Command\Usage,
     Console,
 };
-use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\DI\Container;
 use Innmind\Immutable\Attempt;
 
@@ -21,14 +19,12 @@ final class Defer implements Command
     private ?Command $command = null;
 
     /**
-     * @param \Closure(Container, OperatingSystem, Environment): Command $build
+     * @param \Closure(Container): Command $build
      * @param \Closure(Command): Command $map
      */
     public function __construct(
         private \Closure $build,
         private Container $locate,
-        private OperatingSystem $os,
-        private Environment $env,
         private \Closure $map,
     ) {
     }
@@ -61,6 +57,6 @@ final class Defer implements Command
          * @psalm-suppress PropertyTypeCoercion
          * @var Command
          */
-        return $this->command ??= ($this->build)($this->locate, $this->os, $this->env);
+        return $this->command ??= ($this->build)($this->locate);
     }
 }
