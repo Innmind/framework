@@ -497,7 +497,6 @@ class ApplicationTest extends TestCase
             });
     }
 
-    #[\PHPUnit\Framework\Attributes\Group('wip')]
     public function testLazyCommandAreNotLoaded(): BlackBox\Proof
     {
         return $this
