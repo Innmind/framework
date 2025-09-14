@@ -122,7 +122,7 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Container, OperatingSystem, Environment): Command $command
+     * @param callable(Container): Command $command
      *
      * @return self<I, O>
      */

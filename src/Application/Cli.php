@@ -34,7 +34,7 @@ final class Cli implements Implementation
      * @psalm-mutation-free
      *
      * @param \Closure(OperatingSystem, Environment): Builder $container
-     * @param Sequence<callable(Container, OperatingSystem, Environment): Command> $commands
+     * @param Sequence<callable(Container): Command> $commands
      * @param \Closure(Command, Container): Command $mapCommand
      */
     private function __construct(
@@ -200,8 +200,6 @@ final class Cli implements Implementation
         $commands = $this->commands->map(static fn($command) => new Defer(
             \Closure::fromCallable($command),
             $container,
-            $os,
-            $env,
             $mapCommand,
         ));
 
