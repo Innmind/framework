@@ -34,14 +34,14 @@ final class Cli implements Implementation
      * @psalm-mutation-free
      *
      * @param \Closure(OperatingSystem, Environment): Builder $container
-     * @param Sequence<callable(Container): Command> $commands
+     * @param (\Closure(Container): Command)|Sequence<callable(Container): Command>|null $commands
      * @param \Closure(Command, Container): Command $mapCommand
      */
     private function __construct(
         private OperatingSystem $os,
         private Environment $env,
         private \Closure $container,
-        private Sequence $commands,
+        private \Closure|Sequence|null $commands,
         private \Closure $mapCommand,
     ) {
     }
@@ -55,7 +55,7 @@ final class Cli implements Implementation
             $os,
             $env,
             static fn() => Builder::new(),
-            Sequence::of(),
+            null,
             static fn(Command $command) => $command,
         );
     }
@@ -118,11 +118,21 @@ final class Cli implements Implementation
     #[\Override]
     public function command(callable $command): self
     {
+        $commands = $this->commands;
+
+        if (\is_null($commands)) {
+            $commands = \Closure::fromCallable($command);
+        } else if ($commands instanceof Sequence) {
+            $commands = ($commands)($command);
+        } else {
+            $commands = Sequence::of($commands, $command);
+        }
+
         return new self(
             $this->os,
             $this->env,
             $this->container,
-            ($this->commands)($command),
+            $commands,
             $this->mapCommand,
         );
     }
@@ -197,15 +207,23 @@ final class Cli implements Implementation
             $command,
             $container,
         );
-        $commands = $this->commands->map(static fn($command) => new Defer(
-            \Closure::fromCallable($command),
-            $container,
-            $mapCommand,
-        ));
 
-        return $commands->match(
-            static fn($first, $rest) => Commands::of($first, ...$rest->toList())($input),
-            static fn() => $input->output(Str::of("Hello world\n")),
-        );
+        if (\is_null($this->commands)) {
+            return $input->output(Str::of("Hello world\n"));
+        }
+
+        if ($this->commands instanceof Sequence) {
+            $commands = $this->commands->map(static fn($command) => new Defer(
+                \Closure::fromCallable($command),
+                $container,
+                $mapCommand,
+            ));
+
+            return Commands::for($commands)($input);
+        }
+
+        return Commands::of($mapCommand(
+            ($this->commands)($container),
+        ))($input);
     }
 }

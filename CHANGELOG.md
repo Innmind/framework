@@ -9,6 +9,7 @@
 - `Innmind\Framework\Application::mapRoute()`
 - `Innmind\Framework\Application::routes(class-string<Innmind\Framework\Http\Route\Reference>)`
 - `Innmind\Framework\Application::recoverRouteError()`
+- `Innmind\Framework\Cli\Command`
 
 ### Changed
 

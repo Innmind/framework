@@ -10,6 +10,7 @@ use Innmind\Framework\{
     Middleware\Optional,
     Middleware\LoadDotEnv,
     Http\Route,
+    Cli\Command as CommandReference,
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
@@ -60,6 +61,25 @@ enum Routes implements Route\Reference
             self::a => Route::get('/foo', Services::serviceA),
             self::b => Route::get('/bar', Services::serviceB),
         };
+    }
+}
+
+#[Command\Name('lazy')]
+final class Lazy implements Command
+{
+    public function __construct(
+        private Str $output,
+    ) {
+    }
+
+    public function __invoke(Console $console): Attempt
+    {
+        return $console->output($this->output);
+    }
+
+    public function usage(): Usage
+    {
+        return Usage::for(self::class)->flag('foo');
     }
 }
 
@@ -474,6 +494,64 @@ class ApplicationTest extends TestCase
                     static fn($exit) => $exit,
                     static fn() => null,
                 ));
+            });
+    }
+
+    public function testLazyCommandAreNotLoaded(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+                Set::strings(),
+            )
+            ->prove(function($inputs, $interactive, $variables, $output) {
+                $loaded = false;
+                $app = Application::cli(Factory::build(), Environment::test($variables))
+                    ->command(CommandReference::of(Lazy::class, Services::service))
+                    ->command(CommandReference::of(Lazy::class, Services::service))
+                    ->service(Services::service, static function() use ($output, &$loaded) {
+                        $loaded = true;
+
+                        return Str::of($output);
+                    });
+
+                $env = $app->run(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name', 'help'],
+                    $variables,
+                    '/',
+                ))->unwrap();
+
+                $this->assertSame([" lazy  \n", " lazy  \n"], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+                $this->assertFalse($loaded);
+
+                $env = $app->run(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name', 'lazy'],
+                    $variables,
+                    '/',
+                ))->unwrap();
+
+                $this->assertSame([$output], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+                $this->assertTrue($loaded);
             });
     }
 
