@@ -40,7 +40,7 @@ final class Http implements Implementation
      * @param \Closure(OperatingSystem, Environment): Builder $container
      * @param Sequence<callable(Pipe, Container, OperatingSystem, Environment): Component<SideEffect, Response>> $routes
      * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoute
-     * @param Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response>> $notFound
+     * @param Maybe<callable(ServerRequest, Container): Attempt<Response>> $notFound
      * @param \Closure(ServerRequest, \Throwable, Container): Attempt<Response> $recover
      */
     private function __construct(
@@ -59,7 +59,7 @@ final class Http implements Implementation
      */
     public static function of(OperatingSystem $os, Environment $env): self
     {
-        /** @var Maybe<callable(ServerRequest, Container, OperatingSystem, Environment): Attempt<Response>> */
+        /** @var Maybe<callable(ServerRequest, Container): Attempt<Response>> */
         $notFound = Maybe::nothing();
 
         return new self(
@@ -245,8 +245,6 @@ final class Http implements Implementation
                 static fn($handle) => static fn(ServerRequest $request) => $handle(
                     $request,
                     $container,
-                    $os,
-                    $env,
                 ),
             ),
             static fn($request, $e) => $recover($request, $e, $container),
