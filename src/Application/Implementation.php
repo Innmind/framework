@@ -72,7 +72,7 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Command, Container, OperatingSystem, Environment): Command $map
+     * @param callable(Command, Container): Command $map
      *
      * @return self<I, O>
      */

@@ -35,7 +35,7 @@ final class Cli implements Implementation
      *
      * @param \Closure(OperatingSystem, Environment): Builder $container
      * @param Sequence<callable(Container, OperatingSystem, Environment): Command> $commands
-     * @param \Closure(Command, Container, OperatingSystem, Environment): Command $mapCommand
+     * @param \Closure(Command, Container): Command $mapCommand
      */
     private function __construct(
         private OperatingSystem $os,
@@ -143,13 +143,9 @@ final class Cli implements Implementation
             static fn(
                 Command $command,
                 Container $service,
-                OperatingSystem $os,
-                Environment $env,
             ) => $map(
-                $previous($command, $service, $os, $env),
+                $previous($command, $service),
                 $service,
-                $os,
-                $env,
             ),
         );
     }
@@ -200,8 +196,6 @@ final class Cli implements Implementation
         $mapCommand = static fn(Command $command): Command => $mapCommand(
             $command,
             $container,
-            $os,
-            $env,
         );
         $commands = $this->commands->map(static fn($command) => new Defer(
             \Closure::fromCallable($command),
