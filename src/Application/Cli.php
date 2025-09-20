@@ -26,7 +26,7 @@ use Innmind\Immutable\{
 
 /**
  * @internal
- * @implements Implementation<CliEnv, Attempt<CliEnv>>
+ * @implements Implementation<CliEnv, CliEnv>
  */
 final class Cli implements Implementation
 {
@@ -197,7 +197,7 @@ final class Cli implements Implementation
     }
 
     #[\Override]
-    public function run($input)
+    public function run($input): Attempt
     {
         $container = ($this->container)($this->os, $this->env)->build();
         $mapCommand = $this->mapCommand;

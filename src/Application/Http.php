@@ -227,7 +227,7 @@ final class Http implements Implementation
     }
 
     #[\Override]
-    public function run($input)
+    public function run($input): Attempt
     {
         $container = ($this->container)($this->os, $this->env)->build();
         $mapRoute = $this->mapRoute;
