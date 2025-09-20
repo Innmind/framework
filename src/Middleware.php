@@ -20,5 +20,6 @@ interface Middleware
      *
      * @return Application<I, O>
      */
+    #[\NoDiscard]
     public function __invoke(Application $app): Application;
 }

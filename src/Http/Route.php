@@ -31,6 +31,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function get(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -52,6 +53,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function post(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -73,6 +75,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function put(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -94,6 +97,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function patch(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -115,6 +119,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function delete(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -136,6 +141,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function options(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -157,6 +163,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function trace(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -178,6 +185,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function connect(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -199,6 +207,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function head(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -220,6 +229,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function link(
         string|Template|Alias $endpoint,
         Service $handler,
@@ -241,6 +251,7 @@ final class Route
      *
      * @return callable(Pipe, Container): Component<mixed, Response>
      */
+    #[\NoDiscard]
     public static function unlink(
         string|Template|Alias $endpoint,
         Service $handler,

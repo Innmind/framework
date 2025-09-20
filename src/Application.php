@@ -46,6 +46,7 @@ final class Application
      *
      * @return self<ServerRequest, Response>
      */
+    #[\NoDiscard]
     public static function http(OperatingSystem $os, Environment $env): self
     {
         return new self(Application\Http::of($os, $env));
@@ -56,6 +57,7 @@ final class Application
      *
      * @return self<CliEnv, Attempt<CliEnv>>
      */
+    #[\NoDiscard]
     public static function cli(OperatingSystem $os, Environment $env): self
     {
         return new self(Application\Cli::of($os, $env));
@@ -67,6 +69,7 @@ final class Application
      *
      * @return self<CliEnv, Attempt<CliEnv>>
      */
+    #[\NoDiscard]
     public static function asyncHttp(OperatingSystem $os): self
     {
         return new self(Application\Async\Http::of($os));
@@ -79,6 +82,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function mapEnvironment(callable $map): self
     {
         return new self($this->app->mapEnvironment($map));
@@ -91,6 +95,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function mapOperatingSystem(callable $map): self
     {
         return new self($this->app->mapOperatingSystem($map));
@@ -101,6 +106,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function map(Middleware $map): self
     {
         /** @psalm-suppress ImpureMethodCall Mutation free to force the user to use the returned object */
@@ -114,6 +120,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function service(Service $name, callable $definition): self
     {
         return new self($this->app->service($name, $definition));
@@ -126,6 +133,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function command(callable $command): self
     {
         return new self($this->app->command($command));
@@ -138,6 +146,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function mapCommand(callable $map): self
     {
         return new self($this->app->mapCommand($map));
@@ -150,6 +159,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function route(Http\Route\Reference|callable $handle): self
     {
         if ($handle instanceof Http\Route\Reference) {
@@ -166,6 +176,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function routes(string $routes): self
     {
         $self = $this;
@@ -184,6 +195,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function mapRoute(callable $map): self
     {
         return new self($this->app->mapRoute($map));
@@ -196,6 +208,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function routeNotFound(callable $handle): self
     {
         return new self($this->app->routeNotFound($handle));
@@ -208,6 +221,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function recoverRouteError(callable $recover): self
     {
         return new self($this->app->recoverRouteError($recover));
@@ -218,6 +232,7 @@ final class Application
      *
      * @return O
      */
+    #[\NoDiscard]
     public function run(CliEnv|ServerRequest $input): Attempt|Response
     {
         return $this->app->run($input);
