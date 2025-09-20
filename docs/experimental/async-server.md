@@ -7,7 +7,7 @@ The framework comes with an HTTP server entirely built in PHP allowing you to se
 
 To use it is similar to the standard [http](../http.md) handler, the first difference is the namespace of the main entrypoint:
 
-```php
+```php title="index.php" hl_lines="7"
 <?php
 declare(strict_types = 1);
 
