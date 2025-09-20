@@ -21,6 +21,7 @@
 - `Innminf\Framework\Application::notFoundRequestHandler()` callable must now return an `Innmind\Immutable\Attempt<Response>`
 - `Innminf\Framework\Application::notFoundRequestHandler()` has been renamed `::routeNotFound()`
 - `Innmind\Framework\Application::mapCommand()` callable now longer has access to `OperatingSystem` and `Environment` (use services instead)
+- `Innmind\Framework\Application::run()` always return an `Innmind\Immutable\Attempt`
 
 ### Removed
 
