@@ -58,19 +58,19 @@ use Innmind\Framework\{
 };
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\AMQP\Factory;
-use Innmind\Socket\Internet\Transport;
-use Innmind\TimeContinuum\Earth\ElapsedPeriod;
+use Innmind\IO\Sockets\Internet\Transport;
+use Innmind\TimeContinuum\Period;
 use Innmind\Url\Url;
 
 new class extends Http|Cli {
     protected function configure(Application $app): Application
     {
         return $app->service(
-            Services::amqpClient,
+            Services::amqpClient(),
             static fn($_, OperatingSystem $os) => Factory::of($os)->make(
                 Transport::tcp(),
                 Url::of('amqp://guest:guest@localhost:5672/'),
-                ElapsedPeriod::of(1000),
+                Period::second(1),
             ),
         );
     }
@@ -95,15 +95,15 @@ use Innmind\Framework\{
 };
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\AMQP\Factory;
-use Innmind\Socket\Internet\Transport;
-use Innmind\TimeContinuum\Earth\ElapsedPeriod;
+use Innmind\IO\Sockets\Internet\Transport;
+use Innmind\TimeContinuum\Period;
 use Innmind\Url\Url;
 
 new class extends Http|Cli {
     protected function configure(Application $app): Application
     {
         return $app->service(
-            Services::amqpClient,
+            Services::amqpClient(),
             static fn(
                 $_,
                 OperatingSystem $os,
@@ -111,9 +111,9 @@ new class extends Http|Cli {
             ) => Factory::of($os)->make(
                 Transport::tcp(),
                 Url::of($env->get('AMQP_URL')), //(1)
-                ElapsedPeriod::of($env->maybe('AMQP_TIMEOUT')->match( //(2)
+                Period::second($env->maybe('AMQP_TIMEOUT')->match( //(2)
                     static fn($timeout) => (int) $timeout,
-                    static fn() => 1000,
+                    static fn() => 1,
                 )),
             ),
         );
@@ -122,7 +122,7 @@ new class extends Http|Cli {
 ```
 
 1. this will throw if the variable is not defined
-2. in case the variable is not defined it will fallback to a `1000ms` timeout
+2. in case the variable is not defined it will fallback to a `1s` timeout
 
 ## Services relying on services
 
@@ -148,11 +148,11 @@ new class extends Http|Cli {
     {
         return $app
             ->service(
-                Services::producerClient,
+                Services::producerClient(),
                 static fn($_, OperatingSystem $os) => Factory::of($os)->make(/* like above */),
             )
             ->service(
-                Services::consumerClient,
+                Services::consumerClient(),
                 static fn(Container $container) => $container(Services::producerClient)->with(
                     Qos::of(10), // prefetch 10 messages
                 ),
