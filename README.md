@@ -8,7 +8,8 @@ Minimalist HTTP/CLI framework that accomodate to simple applications to complex 
 
 The framework configuration is immutable and use a declarative approach.
 
-**Important**: to correctly use this library you must validate your code with [`vimeo/psalm`](https://packagist.org/packages/vimeo/psalm)
+> [!IMPORTANT]
+> to correctly use this library you must validate your code with [`vimeo/psalm`](https://packagist.org/packages/vimeo/psalm)
 
 ## Installation
 
@@ -36,30 +37,45 @@ require 'path/to/composer/autoload.php';
 use Innmind\Framework\{
     Main\Http,
     Application,
+    Http\Route,
 };
-use Innmind\Router\Route\Variables;
+use Innmind\DI\Service;
 use Innmind\Http\{
     ServerRequest,
     Response,
     Response\StatusCode,
 };
 use Innmind\Filesystem\File\Content;
+use Innmind\Immutable\Attempt;
+
+enum Services implements Service
+{
+    case hello;
+}
 
 new class extends Http {
     protected function configure(Application $app): Application
     {
         return $app
-            ->route('GET /', static fn(ServerRequest $request) => Response::of(
+            ->service(Services::hello, static fn() => static fn(
+                ServerRequest $request,
+                ?string $name = null,
+            ) => Attempt::result(Response::of(
                 StatusCode::ok,
                 $request->protocolVersion(),
                 null,
-                Content::ofString('Hello world!'),
+                Content::ofString(\sprintf(
+                    'Hello %s!',
+                    $name ?? 'world',
+                )),
+            )))
+            ->route(Route::get(
+                '/',
+                Services::hello,
             ))
-            ->route('GET /{name}', static fn(ServerRequest $request, Variables $variables) => Response::of(
-                StatusCode::ok,
-                $request->protocolVersion(),
-                null,
-                Content::ofString("Hello {$variables->get('name')}!"),
+            ->route(Route::get(
+                '/{name}',
+                Services::hello,
             ));
     }
 };
@@ -87,38 +103,49 @@ use Innmind\Framework\{
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\TimeContinuum\{
     Clock,
-    Earth\Format\ISO8601,
+    Format,
 };
 use Innmind\DI\Container;
 use Innmind\CLI\{
     Console,
     Command,
+    Command\Usage,
 };
-use Innmind\Immutable\Str;
+use Innmind\Immutable\{
+    Attempt,
+    Str,
+};
+
+enum Services implements Service
+{
+    case clock;
+}
 
 new class extends Cli {
     protected function configure(Application $app): Application
     {
-        return $app->command(
-            static fn(Container $container, OperatingSystem $os) => new class($os->clock()) implements Command {
-                public function __construct(
-                    private Clock $clock,
-                ) {
-                }
+        return $app
+            ->service(Services::clock, static fn($_, OperatingSystem $os) => $os->clock())
+            ->command(
+                static fn(Container $container) => new class($container(Services::clock)) implements Command {
+                    public function __construct(
+                        private Clock $clock,
+                    ) {
+                    }
 
-                public function __invoke(Console $console): Console
-                {
-                    $today = $this->clock->now()->format(new ISO8601);
+                    public function __invoke(Console $console): Attempt
+                    {
+                        $today = $this->clock->now()->format(Format::iso8601());
 
-                    return $console->output(Str::of("We are the: $today\n"));
-                }
+                        return $console->output(Str::of("We are the: $today\n"));
+                    }
 
-                public function usage(): string
-                {
-                    return 'today';
-                }
-            },
-        );
+                    public function usage(): Usage
+                    {
+                        return Usage::of('today');
+                    }
+                },
+            );
     }
 };
 ```

@@ -3,10 +3,6 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework;
 
-use Innmind\Framework\Http\{
-    Routes,
-    RequestHandler,
-};
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\CLI\{
     Environment as CliEnv,
@@ -16,11 +12,18 @@ use Innmind\DI\{
     Container,
     Service,
 };
+use Innmind\Router\{
+    Component,
+    Pipe,
+};
 use Innmind\Http\{
     ServerRequest,
     Response,
 };
-use Innmind\Router\Route\Variables;
+use Innmind\Immutable\{
+    Attempt,
+    SideEffect,
+};
 
 /**
  * @template I of ServerRequest|CliEnv
@@ -28,17 +31,14 @@ use Innmind\Router\Route\Variables;
  */
 final class Application
 {
-    /** @var Application\Implementation<I, O> */
-    private Application\Implementation $app;
-
     /**
      * @psalm-mutation-free
      *
      * @param Application\Implementation<I, O> $app
      */
-    private function __construct(Application\Implementation $app)
-    {
-        $this->app = $app;
+    private function __construct(
+        private Application\Implementation $app,
+    ) {
     }
 
     /**
@@ -46,6 +46,7 @@ final class Application
      *
      * @return self<ServerRequest, Response>
      */
+    #[\NoDiscard]
     public static function http(OperatingSystem $os, Environment $env): self
     {
         return new self(Application\Http::of($os, $env));
@@ -56,6 +57,7 @@ final class Application
      *
      * @return self<CliEnv, CliEnv>
      */
+    #[\NoDiscard]
     public static function cli(OperatingSystem $os, Environment $env): self
     {
         return new self(Application\Cli::of($os, $env));
@@ -67,6 +69,7 @@ final class Application
      *
      * @return self<CliEnv, CliEnv>
      */
+    #[\NoDiscard]
     public static function asyncHttp(OperatingSystem $os): self
     {
         return new self(Application\Async\Http::of($os));
@@ -79,6 +82,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function mapEnvironment(callable $map): self
     {
         return new self($this->app->mapEnvironment($map));
@@ -91,6 +95,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function mapOperatingSystem(callable $map): self
     {
         return new self($this->app->mapOperatingSystem($map));
@@ -101,6 +106,7 @@ final class Application
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function map(Middleware $map): self
     {
         /** @psalm-suppress ImpureMethodCall Mutation free to force the user to use the returned object */
@@ -110,12 +116,12 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param non-empty-string|Service $name
      * @param callable(Container, OperatingSystem, Environment): object $definition
      *
      * @return self<I, O>
      */
-    public function service(string|Service $name, callable $definition): self
+    #[\NoDiscard]
+    public function service(Service $name, callable $definition): self
     {
         return new self($this->app->service($name, $definition));
     }
@@ -123,10 +129,11 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Container, OperatingSystem, Environment): Command $command
+     * @param callable(Container): Command $command
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function command(callable $command): self
     {
         return new self($this->app->command($command));
@@ -135,10 +142,11 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Command, Container, OperatingSystem, Environment): Command $map
+     * @param callable(Command, Container): Command $map
      *
      * @return self<I, O>
      */
+    #[\NoDiscard]
     public function mapCommand(callable $map): self
     {
         return new self($this->app->mapCommand($map));
@@ -147,58 +155,85 @@ final class Application
     /**
      * @psalm-mutation-free
      *
-     * @param literal-string $pattern
-     * @param callable(ServerRequest, Variables, Container, OperatingSystem, Environment): Response $handle
+     * @param Http\Route\Reference|callable(Pipe, Container): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */
-    public function route(string $pattern, callable $handle): self
+    #[\NoDiscard]
+    public function route(Http\Route\Reference|callable $handle): self
     {
-        return new self($this->app->route($pattern, $handle));
+        if ($handle instanceof Http\Route\Reference) {
+            $handle = $handle->route();
+        }
+
+        return new self($this->app->route($handle));
     }
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
+     * @param class-string<Http\Route\Reference> $routes
      *
      * @return self<I, O>
      */
-    public function appendRoutes(callable $append): self
+    #[\NoDiscard]
+    public function routes(string $routes): self
     {
-        return new self($this->app->appendRoutes($append));
+        $self = $this;
+
+        foreach ($routes::cases() as $route) {
+            $self = $self->route($route);
+        }
+
+        return $self;
     }
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
+     * @param callable(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $map
      *
      * @return self<I, O>
      */
-    public function mapRequestHandler(callable $map): self
+    #[\NoDiscard]
+    public function mapRoute(callable $map): self
     {
-        return new self($this->app->mapRequestHandler($map));
+        return new self($this->app->mapRoute($map));
     }
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
+     * @param callable(ServerRequest, Container): Attempt<Response> $handle
      *
      * @return self<I, O>
      */
-    public function notFoundRequestHandler(callable $handle): self
+    #[\NoDiscard]
+    public function routeNotFound(callable $handle): self
     {
-        return new self($this->app->notFoundRequestHandler($handle));
+        return new self($this->app->routeNotFound($handle));
+    }
+
+    /**
+     * @psalm-mutation-free
+     *
+     * @param callable(ServerRequest, \Throwable, Container): Attempt<Response> $recover
+     *
+     * @return self<I, O>
+     */
+    #[\NoDiscard]
+    public function recoverRouteError(callable $recover): self
+    {
+        return new self($this->app->recoverRouteError($recover));
     }
 
     /**
      * @param I $input
      *
-     * @return O
+     * @return Attempt<O>
      */
-    public function run(CliEnv|ServerRequest $input): CliEnv|Response
+    #[\NoDiscard]
+    public function run(CliEnv|ServerRequest $input): Attempt
     {
         return $this->app->run($input);
     }

@@ -21,8 +21,8 @@ use Innmind\DI\{
 use Innmind\Immutable\{
     Sequence,
     Str,
+    Attempt,
 };
-use Ramsey\Uuid\Uuid;
 
 /**
  * @internal
@@ -30,34 +30,20 @@ use Ramsey\Uuid\Uuid;
  */
 final class Cli implements Implementation
 {
-    private OperatingSystem $os;
-    private Environment $env;
-    /** @var callable(OperatingSystem, Environment): Builder */
-    private $container;
-    /** @var Sequence<string> */
-    private Sequence $commands;
-    /** @var callable(Command, Container, OperatingSystem, Environment): Command */
-    private $mapCommand;
-
     /**
      * @psalm-mutation-free
      *
-     * @param callable(OperatingSystem, Environment): Builder $container
-     * @param Sequence<string> $commands
-     * @param callable(Command, Container, OperatingSystem, Environment): Command $mapCommand
+     * @param \Closure(OperatingSystem, Environment): Builder $container
+     * @param (\Closure(Container): Command)|Sequence<callable(Container): Command>|null $commands
+     * @param \Closure(Command, Container): Command $mapCommand
      */
     private function __construct(
-        OperatingSystem $os,
-        Environment $env,
-        callable $container,
-        Sequence $commands,
-        callable $mapCommand,
+        private OperatingSystem $os,
+        private Environment $env,
+        private \Closure $container,
+        private \Closure|Sequence|null $commands,
+        private \Closure $mapCommand,
     ) {
-        $this->os = $os;
-        $this->env = $env;
-        $this->container = $container;
-        $this->commands = $commands;
-        $this->mapCommand = $mapCommand;
     }
 
     /**
@@ -69,7 +55,7 @@ final class Cli implements Implementation
             $os,
             $env,
             static fn() => Builder::new(),
-            Sequence::strings(),
+            null,
             static fn(Command $command) => $command,
         );
     }
@@ -77,6 +63,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapEnvironment(callable $map): self
     {
         /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
@@ -92,6 +79,7 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapOperatingSystem(callable $map): self
     {
         /** @psalm-suppress ImpureFunctionCall Mutation free to force the user to use the returned object */
@@ -107,7 +95,8 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
-    public function service(string|Service $name, callable $definition): self
+    #[\Override]
+    public function service(Service $name, callable $definition): self
     {
         $container = $this->container;
 
@@ -126,24 +115,32 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function command(callable $command): self
     {
-        /** @psalm-suppress ImpureMethodCall Mutation free to force the user to use the returned object */
-        $reference = Uuid::uuid4()->toString();
-        $self = $this->service($reference, $command);
+        $commands = $this->commands;
+
+        if (\is_null($commands)) {
+            $commands = \Closure::fromCallable($command);
+        } else if ($commands instanceof Sequence) {
+            $commands = ($commands)($command);
+        } else {
+            $commands = Sequence::of($commands, $command);
+        }
 
         return new self(
-            $self->os,
-            $self->env,
-            $self->container,
-            ($self->commands)($reference),
-            $self->mapCommand,
+            $this->os,
+            $this->env,
+            $this->container,
+            $commands,
+            $this->mapCommand,
         );
     }
 
     /**
      * @psalm-mutation-free
      */
+    #[\Override]
     public function mapCommand(callable $map): self
     {
         $previous = $this->mapCommand;
@@ -156,13 +153,9 @@ final class Cli implements Implementation
             static fn(
                 Command $command,
                 Container $service,
-                OperatingSystem $os,
-                Environment $env,
             ) => $map(
-                $previous($command, $service, $os, $env),
+                $previous($command, $service),
                 $service,
-                $os,
-                $env,
             ),
         );
     }
@@ -170,7 +163,8 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
-    public function route(string $pattern, callable $handle): self
+    #[\Override]
+    public function route(callable $handle): self
     {
         return $this;
     }
@@ -178,7 +172,8 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
-    public function appendRoutes(callable $append): self
+    #[\Override]
+    public function mapRoute(callable $map): self
     {
         return $this;
     }
@@ -186,7 +181,8 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
-    public function mapRequestHandler(callable $map): self
+    #[\Override]
+    public function routeNotFound(callable $handle): self
     {
         return $this;
     }
@@ -194,12 +190,14 @@ final class Cli implements Implementation
     /**
      * @psalm-mutation-free
      */
-    public function notFoundRequestHandler(callable $handle): self
+    #[\Override]
+    public function recoverRouteError(callable $recover): self
     {
         return $this;
     }
 
-    public function run($input)
+    #[\Override]
+    public function run($input): Attempt
     {
         $container = ($this->container)($this->os, $this->env)->build();
         $mapCommand = $this->mapCommand;
@@ -208,18 +206,24 @@ final class Cli implements Implementation
         $mapCommand = static fn(Command $command): Command => $mapCommand(
             $command,
             $container,
-            $os,
-            $env,
         );
-        $commands = $this->commands->map(static fn($service) => new Defer(
-            $service,
-            $container,
-            $mapCommand,
-        ));
 
-        return $commands->match(
-            static fn($first, $rest) => Commands::of($first, ...$rest->toList())($input),
-            static fn() => $input->output(Str::of("Hello world\n")),
-        );
+        if (\is_null($this->commands)) {
+            return $input->output(Str::of("Hello world\n"));
+        }
+
+        if ($this->commands instanceof Sequence) {
+            $commands = $this->commands->map(static fn($command) => new Defer(
+                \Closure::fromCallable($command),
+                $container,
+                $mapCommand,
+            ));
+
+            return Commands::for($commands)($input);
+        }
+
+        return Commands::of($mapCommand(
+            ($this->commands)($container),
+        ))($input);
     }
 }

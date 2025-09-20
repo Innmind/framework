@@ -21,13 +21,11 @@ use Innmind\Immutable\{
 
 final class LoadDotEnv implements Middleware
 {
-    private Path $folder;
-
-    private function __construct(Path $folder)
+    private function __construct(private Path $folder)
     {
-        $this->folder = $folder;
     }
 
+    #[\Override]
     public function __invoke(Application $app): Application
     {
         $folder = $this->folder;
@@ -36,7 +34,8 @@ final class LoadDotEnv implements Middleware
             static fn($env, $os) => $os
                 ->filesystem()
                 ->mount($folder)
-                ->get(Name::of('.env'))
+                ->maybe()
+                ->flatMap(static fn($adapter) => $adapter->get(Name::of('.env')))
                 ->keep(Instance::of(File::class))
                 ->match(
                     static fn($file) => self::add($env, $file),

@@ -5,38 +5,32 @@ namespace Innmind\Framework\Cli\Command;
 
 use Innmind\CLI\{
     Command,
+    Command\Usage,
     Console,
 };
-use Innmind\DI\{
-    Container,
-    Service,
-};
+use Innmind\DI\Container;
+use Innmind\Immutable\Attempt;
 
 /**
  * @internal
  */
 final class Defer implements Command
 {
-    private string|Service $service;
-    private Container $locate;
-    /** @var callable(Command): Command */
-    private $map;
     private ?Command $command = null;
 
     /**
-     * @param callable(Command): Command $map
+     * @param \Closure(Container): Command $build
+     * @param \Closure(Command): Command $map
      */
     public function __construct(
-        string|Service $service,
-        Container $locate,
-        callable $map,
+        private \Closure $build,
+        private Container $locate,
+        private \Closure $map,
     ) {
-        $this->service = $service;
-        $this->locate = $locate;
-        $this->map = $map;
     }
 
-    public function __invoke(Console $console): Console
+    #[\Override]
+    public function __invoke(Console $console): Attempt
     {
         // we map the command when running it instead of when loading it to
         // avoid loading the decorator multiple times for a same script as
@@ -50,7 +44,8 @@ final class Defer implements Command
     /**
      * @psalm-mutation-free
      */
-    public function usage(): string
+    #[\Override]
+    public function usage(): Usage
     {
         /** @psalm-suppress ImpureMethodCall */
         return $this->command()->usage();
@@ -62,6 +57,6 @@ final class Defer implements Command
          * @psalm-suppress PropertyTypeCoercion
          * @var Command
          */
-        return $this->command ??= ($this->locate)($this->service);
+        return $this->command ??= ($this->build)($this->locate);
     }
 }

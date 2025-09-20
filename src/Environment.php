@@ -15,15 +15,11 @@ use Innmind\Immutable\{
  */
 final class Environment
 {
-    /** @var Map<string, string> */
-    private Map $variables;
-
     /**
      * @param Map<string, string> $variables
      */
-    private function __construct(Map $variables)
+    private function __construct(private Map $variables)
     {
-        $this->variables = $variables;
     }
 
     /**
@@ -31,6 +27,7 @@ final class Environment
      *
      * @param Map<string, string> $variables
      */
+    #[\NoDiscard]
     public static function of(Map $variables): self
     {
         return new self($variables);
@@ -41,6 +38,7 @@ final class Environment
      *
      * @param list<array{string, string}> $variables
      */
+    #[\NoDiscard]
     public static function test(array $variables): self
     {
         return self::of(Map::of(...$variables));
@@ -49,6 +47,7 @@ final class Environment
     /**
      * @psalm-pure
      */
+    #[\NoDiscard]
     public static function http(HttpEnvironment $env): self
     {
         return $env->reduce(
@@ -57,6 +56,7 @@ final class Environment
         );
     }
 
+    #[\NoDiscard]
     public function with(string $key, string $value): self
     {
         return new self(($this->variables)($key, $value));
@@ -67,6 +67,7 @@ final class Environment
      *
      * @throws LogicException If the variable doesn't exist
      */
+    #[\NoDiscard]
     public function get(string $key): string
     {
         return $this->maybe($key)->match(
@@ -78,6 +79,7 @@ final class Environment
     /**
      * @return Maybe<string>
      */
+    #[\NoDiscard]
     public function maybe(string $key): Maybe
     {
         return $this->variables->get($key);
@@ -86,6 +88,7 @@ final class Environment
     /**
      * @return Map<string, string>
      */
+    #[\NoDiscard]
     public function all(): Map
     {
         return $this->variables;

@@ -9,33 +9,32 @@ use Innmind\Framework\{
     Environment,
     Middleware\Optional,
     Middleware\LoadDotEnv,
-    Http\RequestHandler,
-    Http\To,
+    Http\Route,
+    Cli\Command as CommandReference,
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
     Environment\InMemory,
     Command,
+    Command\Usage,
     Console,
 };
-use Innmind\Router\{
-    Route,
-    Under,
-};
+use Innmind\DI\Service;
 use Innmind\Http\{
     ServerRequest,
     Response,
     Method,
     Response\StatusCode,
     ProtocolVersion,
-    Header\ContentType,
 };
 use Innmind\Url\{
     Url,
     Path,
 };
-use Innmind\UrlTemplate\Template;
-use Innmind\Immutable\Str;
+use Innmind\Immutable\{
+    Str,
+    Attempt,
+};
 use Innmind\BlackBox\{
     PHPUnit\BlackBox,
     Set,
@@ -43,26 +42,67 @@ use Innmind\BlackBox\{
 };
 use Fixtures\Innmind\Url\Url as FUrl;
 
+enum Services implements Service
+{
+    case responseHandler;
+    case service;
+    case serviceA;
+    case serviceB;
+}
+
+enum Routes implements Route\Reference
+{
+    case a;
+    case b;
+
+    public function route(): callable
+    {
+        return match ($this) {
+            self::a => Route::get('/foo', Services::serviceA),
+            self::b => Route::get('/bar', Services::serviceB),
+        };
+    }
+}
+
+#[Command\Name('lazy')]
+final class Lazy implements Command
+{
+    public function __construct(
+        private Str $output,
+    ) {
+    }
+
+    public function __invoke(Console $console): Attempt
+    {
+        return $console->output($this->output);
+    }
+
+    public function usage(): Usage
+    {
+        return Usage::for(self::class)->flag('foo');
+    }
+}
+
 class ApplicationTest extends TestCase
 {
     use BlackBox;
 
-    public function testCliApplicationReturnsHelloWorldByDefault()
+    public function testCliApplicationReturnsHelloWorldByDefault(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $arguments, $variables) {
+            ->prove(function($inputs, $interactive, $arguments, $variables) {
                 $app = Application::cli(Factory::build(), $env = Environment::test($variables));
 
                 $env = $app->run(InMemory::of(
@@ -71,7 +111,7 @@ class ApplicationTest extends TestCase
                     $arguments,
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(["Hello world\n"], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -81,22 +121,22 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testOrderOfMappingEnvironmentAndOperatingSystemIsKept()
+    public function testOrderOfMappingEnvironmentAndOperatingSystemIsKept(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $arguments, $variables) {
+            ->prove(function($inputs, $interactive, $arguments, $variables) {
                 $os = Factory::build();
                 $app = Application::cli($os, Environment::test($variables))
                     ->mapEnvironment(static fn($env) => $env->with('foo', 'bar'))
@@ -113,7 +153,7 @@ class ApplicationTest extends TestCase
                     $arguments,
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
@@ -139,7 +179,7 @@ class ApplicationTest extends TestCase
                     $arguments,
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
@@ -148,31 +188,31 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testRunDefaultCommand()
+    public function testRunDefaultCommand(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command';
+                            return Usage::parse('my-command');
                         }
                     });
 
@@ -182,7 +222,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -192,42 +232,42 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testRunSpecificCommand()
+    public function testRunSpecificCommand(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command A output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-a';
+                            return Usage::parse('my-command-a');
                         }
                     })
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command B output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-b';
+                            return Usage::parse('my-command-b');
                         }
                     });
 
@@ -237,7 +277,7 @@ class ApplicationTest extends TestCase
                     ['script-name', 'my-command-a'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command A output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -251,7 +291,7 @@ class ApplicationTest extends TestCase
                     ['script-name', 'my-command-b'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command B output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -261,25 +301,24 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testServicesAreNotLoadedIfNotUsed()
+    public function testServicesAreNotLoadedIfNotUsed(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
-                Set\Strings::atLeast(1),
             )
-            ->then(function($inputs, $interactive, $arguments, $variables, $service) {
+            ->prove(function($inputs, $interactive, $arguments, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
-                    ->service($service, static fn() => throw new \Exception);
+                    ->service(Services::service, static fn() => throw new \Exception);
 
                 $env = $app->run(InMemory::of(
                     $inputs,
@@ -287,7 +326,7 @@ class ApplicationTest extends TestCase
                     $arguments,
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(["Hello world\n"], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -297,40 +336,39 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testServicesAreAccessibleToCommands()
+    public function testServicesAreAccessibleToCommands(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
-                Set\Strings::atLeast(1),
             )
-            ->then(function($inputs, $interactive, $variables, $service) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
-                    ->command(static fn($get) => new class($get($service)) implements Command {
+                    ->command(static fn($get) => new class($get(Services::service)) implements Command {
                         public function __construct(
                             private Str $output,
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output($this->output);
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command';
+                            return Usage::parse('my-command');
                         }
                     })
-                    ->service($service, static fn() => Str::of('my command output'));
+                    ->service(Services::service, static fn() => Str::of('my command output'));
 
                 $env = $app->run(InMemory::of(
                     $inputs,
@@ -338,7 +376,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -348,42 +386,40 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testServiceDependencies()
+    public function testServiceDependencies(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
-                Set\Strings::atLeast(1),
-                Set\Strings::atLeast(1),
             )
-            ->then(function($inputs, $interactive, $variables, $serviceA, $serviceB) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
-                    ->command(static fn($get) => new class($get($serviceA)) implements Command {
+                    ->command(static fn($get) => new class($get(Services::serviceA)) implements Command {
                         public function __construct(
                             private Str $output,
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output($this->output);
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command';
+                            return Usage::parse('my-command');
                         }
                     })
-                    ->service($serviceA, static fn($get) => Str::of('my command output')->append($get($serviceB)->toString()))
-                    ->service($serviceB, static fn() => Str::of(' twice'));
+                    ->service(Services::serviceA, static fn($get) => Str::of('my command output')->append($get(Services::serviceB)->toString()))
+                    ->service(Services::serviceB, static fn() => Str::of(' twice'));
 
                 $env = $app->run(InMemory::of(
                     $inputs,
@@ -391,7 +427,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output twice'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -401,31 +437,31 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testUnusedCommandIsNotLoaded()
+    public function testUnusedCommandIsNotLoaded(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command A output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-a';
+                            return Usage::parse('my-command-a');
                         }
                     })
                     ->command(static fn() => new class implements Command {
@@ -434,14 +470,14 @@ class ApplicationTest extends TestCase
                             throw new \Exception;
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command B output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-b';
+                            return Usage::parse('my-command-b');
                         }
                     });
 
@@ -451,7 +487,7 @@ class ApplicationTest extends TestCase
                     ['script-name', 'my-command-a'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command A output'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -461,31 +497,89 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testDecoratingCommands()
+    public function testLazyCommandAreNotLoaded(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+                Set::strings(),
+            )
+            ->prove(function($inputs, $interactive, $variables, $output) {
+                $loaded = false;
+                $app = Application::cli(Factory::build(), Environment::test($variables))
+                    ->command(CommandReference::of(Lazy::class, Services::service))
+                    ->command(CommandReference::of(Lazy::class, Services::service))
+                    ->service(Services::service, static function() use ($output, &$loaded) {
+                        $loaded = true;
+
+                        return Str::of($output);
+                    });
+
+                $env = $app->run(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name', 'help'],
+                    $variables,
+                    '/',
+                ))->unwrap();
+
+                $this->assertSame([" lazy  \n", " lazy  \n"], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+                $this->assertFalse($loaded);
+
+                $env = $app->run(InMemory::of(
+                    $inputs,
+                    $interactive,
+                    ['script-name', 'lazy'],
+                    $variables,
+                    '/',
+                ))->unwrap();
+
+                $this->assertSame([$output], $env->outputs());
+                $this->assertNull($env->exitCode()->match(
+                    static fn($exit) => $exit,
+                    static fn() => null,
+                ));
+                $this->assertTrue($loaded);
+            });
+    }
+
+    public function testDecoratingCommands(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command output'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command';
+                            return Usage::parse('my-command');
                         }
                     })
                     ->mapCommand(static fn($command) => new class($command) implements Command {
@@ -494,12 +588,14 @@ class ApplicationTest extends TestCase
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
-                            return ($this->inner)($console)->output(Str::of('decorated'));
+                            return ($this->inner)($console)->flatMap(
+                                static fn($console) => $console->output(Str::of('decorated')),
+                            );
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
                             return $this->inner->usage();
                         }
@@ -511,7 +607,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output', 'decorated'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -521,44 +617,44 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testCommandDecoratorIsAppliedOnlyOnTheWishedOne()
+    public function testCommandDecoratorIsAppliedOnlyOnTheWishedOne(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 static $testRuns = 0;
                 ++$testRuns;
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command output A'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-a';
+                            return Usage::parse('my-command-a');
                         }
                     })
                     ->command(static fn() => new class implements Command {
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of('my command output B'));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'my-command-b';
+                            return Usage::parse('my-command-b');
                         }
                     })
                     ->mapCommand(static fn($command) => new class($command) implements Command {
@@ -570,12 +666,14 @@ class ApplicationTest extends TestCase
                             $this->instances = ++$instances;
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
-                            return ($this->inner)($console)->output(Str::of((string) $this->instances));
+                            return ($this->inner)($console)->flatMap(
+                                fn($console) => $console->output(Str::of((string) $this->instances)),
+                            );
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
                             return $this->inner->usage();
                         }
@@ -587,7 +685,7 @@ class ApplicationTest extends TestCase
                     ['script-name', 'my-command-b'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['my command output B', (string) $testRuns], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -597,22 +695,23 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testMiddleware()
+    public function testMiddleware(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
+                    ->service(Services::service, static fn($_, $__, $env) => $env)
                     ->map(new class implements Middleware {
                         public function __invoke(Application $app): Application
                         {
@@ -643,23 +742,23 @@ class ApplicationTest extends TestCase
                             });
                         }
                     })
-                    ->command(static fn($_, $__, $env) => new class($env) implements Command {
+                    ->command(static fn($get) => new class($get(Services::service)) implements Command {
                         public function __construct(
                             private $env,
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console
                                 ->output(Str::of($this->env->get('foo')))
-                                ->output(Str::of($this->env->get('bar')))
-                                ->output(Str::of($this->env->get('baz')));
+                                ->flatMap(fn($console) => $console->output(Str::of($this->env->get('bar'))))
+                                ->flatMap(fn($console) => $console->output(Str::of($this->env->get('baz'))));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'watev';
+                            return Usage::parse('watev');
                         }
                     });
 
@@ -669,7 +768,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['bar', 'baz', 'foo'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -679,21 +778,21 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testOptionalMiddleware()
+    public function testOptionalMiddleware(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $middleware = new class implements Middleware {
                     public function __invoke(Application $app): Application
                     {
@@ -702,22 +801,23 @@ class ApplicationTest extends TestCase
                 };
 
                 $app = Application::cli(Factory::build(), Environment::test($variables))
+                    ->service(Services::service, static fn($_, $__, $env) => $env)
                     ->map(Optional::of(Unknown::class, static fn() => throw new \Exception))
                     ->map(Optional::of($middleware::class, static fn() => $middleware))
-                    ->command(static fn($_, $__, $env) => new class($env) implements Command {
+                    ->command(static fn($get) => new class($get(Services::service)) implements Command {
                         public function __construct(
                             private $env,
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console->output(Str::of($this->env->get('foo')));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'watev';
+                            return Usage::parse('watev');
                         }
                     });
 
@@ -727,7 +827,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['bar'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -737,39 +837,40 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testLoadDotEnv()
+    public function testLoadDotEnv(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Sequence::of(Set\Strings::any())->between(0, 10),
-                Set\Elements::of(true, false),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::sequence(Set::strings())->between(0, 10),
+                Set::of(true, false),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($inputs, $interactive, $variables) {
+            ->prove(function($inputs, $interactive, $variables) {
                 $app = Application::cli(Factory::build(), Environment::test($variables))
+                    ->service(Services::service, static fn($_, $__, $env) => $env)
                     ->map(LoadDotEnv::at(Path::of(__DIR__.'/../fixtures/')))
-                    ->command(static fn($_, $__, $env) => new class($env) implements Command {
+                    ->command(static fn($get) => new class($get(Services::service)) implements Command {
                         public function __construct(
                             private $env,
                         ) {
                         }
 
-                        public function __invoke(Console $console): Console
+                        public function __invoke(Console $console): Attempt
                         {
                             return $console
                                 ->output(Str::of($this->env->get('FOO')))
-                                ->output(Str::of($this->env->get('PASSWORD')));
+                                ->flatMap(fn($console) => $console->output(Str::of($this->env->get('PASSWORD'))));
                         }
 
-                        public function usage(): string
+                        public function usage(): Usage
                         {
-                            return 'watev';
+                            return Usage::parse('watev');
                         }
                     });
 
@@ -779,7 +880,7 @@ class ApplicationTest extends TestCase
                     ['script-name'],
                     $variables,
                     '/',
-                ));
+                ))->unwrap();
 
                 $this->assertSame(['bar', 'foo=" \n watev; bar!'], $env->outputs());
                 $this->assertNull($env->exitCode()->match(
@@ -789,73 +890,79 @@ class ApplicationTest extends TestCase
             });
     }
 
-    public function testHttpApplicationReturnsNotFoundByDefault()
+    public function testHttpApplicationReturnsNotFoundByDefault(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
                 FUrl::any(),
-                Set\Elements::of(...Method::cases()),
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...Method::cases()),
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($url, $method, $protocol, $variables) {
+            ->prove(function($url, $method, $protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables));
 
                 $response = $app->run(ServerRequest::of(
                     $url,
                     $method,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame(StatusCode::notFound, $response->statusCode());
                 $this->assertSame($protocol, $response->protocolVersion());
             });
     }
 
-    public function testMatchRoutes()
+    public function testMatchRoutes(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($protocol, $variables) {
+            ->prove(function($protocol, $variables) {
                 $responseA = Response::of(StatusCode::ok, $protocol);
                 $responseB = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->appendRoutes(fn($routes) => $routes->add(
-                        Route::of(Method::get, Template::of('/foo'))->handle(function($request) use ($protocol, $responseA) {
-                            $this->assertSame($protocol, $request->protocolVersion());
+                    ->route(
+                        fn($pipe) => $pipe
+                            ->get()
+                            ->endpoint('/foo')
+                            ->handle(function($request) use ($protocol, $responseA) {
+                                $this->assertSame($protocol, $request->protocolVersion());
 
-                            return $responseA;
-                        }),
-                    ))
-                    ->appendRoutes(fn($routes) => $routes->add(
-                        Route::of(Method::get, Template::of('/bar'))->handle(function($request) use ($protocol, $responseB) {
-                            $this->assertSame($protocol, $request->protocolVersion());
+                                return Attempt::result($responseA);
+                            })
+                            ->or(
+                                $pipe
+                                    ->get()
+                                    ->endpoint('/bar')
+                                    ->handle(function($request) use ($protocol, $responseB) {
+                                        $this->assertSame($protocol, $request->protocolVersion());
 
-                            return $responseB;
-                        }),
-                    ));
+                                        return Attempt::result($responseB);
+                                    }),
+                            ),
+                    );
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseA, $response);
 
@@ -863,85 +970,100 @@ class ApplicationTest extends TestCase
                     Url::of('/bar'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseB, $response);
             });
     }
 
-    public function testRouteShortDeclaration()
+    public function testRouteShortDeclaration(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($protocol, $variables) {
+            ->prove(function($protocol, $variables) {
                 $responseA = Response::of(StatusCode::ok, $protocol);
                 $responseB = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->route('GET /foo', function($request) use ($protocol, $responseA) {
-                        $this->assertSame($protocol, $request->protocolVersion());
+                    ->route(
+                        fn($pipe) => $pipe
+                            ->get()
+                            ->endpoint('/foo')
+                            ->handle(function($request) use ($protocol, $responseA) {
+                                $this->assertSame($protocol, $request->protocolVersion());
 
-                        return $responseA;
-                    })
-                    ->route('GET /bar', function($request) use ($protocol, $responseB) {
-                        $this->assertSame($protocol, $request->protocolVersion());
+                                return Attempt::result($responseA);
+                            }),
+                    )
+                    ->route(
+                        fn($pipe) => $pipe
+                            ->post()
+                            ->endpoint('/bar')
+                            ->handle(function($request) use ($protocol, $responseB) {
+                                $this->assertSame($protocol, $request->protocolVersion());
 
-                        return $responseB;
-                    });
+                                return Attempt::result($responseB);
+                            }),
+                    );
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseA, $response);
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/bar'),
-                    Method::get,
+                    Method::post,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseB, $response);
             });
     }
 
-    public function testRouteToService()
+    public function testRouteToService(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($protocol, $variables) {
+            ->prove(function($protocol, $variables) {
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->route('GET /foo', To::service('response-handler'))
-                    ->service('response-handler', static fn() => new class($expected) {
+                    ->route(
+                        static fn($pipe, $container) => $pipe
+                            ->get()
+                            ->endpoint('/foo')
+                            ->handle($container(Services::responseHandler)),
+                    )
+                    ->service(Services::responseHandler, static fn() => new class($expected) {
                         public function __construct(private $response)
                         {
                         }
 
                         public function __invoke()
                         {
-                            return $this->response;
+                            return Attempt::result($this->response);
                         }
                     });
 
@@ -949,127 +1071,249 @@ class ApplicationTest extends TestCase
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($expected, $response);
             });
     }
 
-    public function testMapRequestHandler()
+    public function testRouteToServiceShortcut(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                FUrl::any(),
-                Set\Elements::of(...Method::cases()),
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...Method::cases()),
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($url, $method, $protocol, $variables) {
-                $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->mapRequestHandler(static fn($inner) => new class($inner) implements RequestHandler {
-                        public function __construct(
-                            private $inner,
-                        ) {
-                        }
-
-                        public function __invoke(ServerRequest $request): Response
-                        {
-                            $response = ($this->inner)($request);
-
-                            return Response::of(
-                                $response->statusCode(),
-                                $response->protocolVersion(),
-                                $response->headers()(ContentType::of('application', 'octet-stream')),
-                            );
-                        }
-                    });
-
-                $response = $app->run(ServerRequest::of(
-                    $url,
-                    $method,
-                    $protocol,
-                ));
-
-                $this->assertSame(StatusCode::notFound, $response->statusCode());
-                $this->assertSame($protocol, $response->protocolVersion());
-                $this->assertSame(
-                    'Content-Type: application/octet-stream',
-                    $response->headers()->get('content-type')->match(
-                        static fn($header) => $header->toString(),
-                        static fn() => null,
-                    ),
-                );
-            });
-    }
-
-    public function testAllowToSpecifyHttpNotFoundRequestHandler()
-    {
-        $this
-            ->forAll(
-                FUrl::any(),
-                Set\Elements::of(...Method::cases()),
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
-                        static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
-                    ),
-                )->between(0, 10),
-            )
-            ->then(function($url, $method, $protocol, $variables) {
+            ->prove(function($method, $protocol, $variables) {
                 $expected = Response::of(StatusCode::ok, $protocol);
 
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->notFoundRequestHandler(function($request) use ($protocol, $expected) {
+                    ->route(Route::{$method->name}(
+                        '/foo',
+                        Services::responseHandler,
+                    ))
+                    ->service(Services::responseHandler, static fn() => new class($expected) {
+                        public function __construct(private $response)
+                        {
+                        }
+
+                        public function __invoke()
+                        {
+                            return Attempt::result($this->response);
+                        }
+                    });
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    $method,
+                    $protocol,
+                ))->unwrap();
+
+                $this->assertSame($expected, $response);
+            });
+    }
+
+    public function testAllowToSpecifyHttpNotFoundRequestHandler(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                FUrl::any(),
+                Set::of(...Method::cases()),
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($url, $method, $protocol, $variables) {
+                $expected = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->routeNotFound(function($request) use ($protocol, $expected) {
                         $this->assertSame($protocol, $request->protocolVersion());
 
-                        return $expected;
+                        return Attempt::result($expected);
                     });
 
                 $response = $app->run(ServerRequest::of(
                     $url,
                     $method,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($expected, $response);
             });
     }
 
-    public function testMatchMethodAllowed()
+    public function testMatchMethodAllowed(): BlackBox\Proof
     {
-        $this
+        return $this
             ->forAll(
-                Set\Elements::of(...ProtocolVersion::cases()),
-                Set\Sequence::of(
-                    Set\Composite::immutable(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
                         static fn($key, $value) => [$key, $value],
-                        Set\Randomize::of(Set\Strings::any()),
-                        Set\Strings::any(),
+                        Set::strings()->randomize(),
+                        Set::strings(),
                     ),
                 )->between(0, 10),
             )
-            ->then(function($protocol, $variables) {
+            ->prove(function($protocol, $variables) {
                 $app = Application::http(Factory::build(), Environment::test($variables))
-                    ->appendRoutes(static fn($routes) => $routes->add(
-                        Under::of(Template::of('/foo'))->route(Method::get),
-                    ));
+                    ->route(
+                        static fn($pipe) => $pipe
+                            ->endpoint('/foo')
+                            ->any(
+                                $pipe
+                                    ->get()
+                                    ->handle(static fn($request) => Attempt::result(
+                                        Response::of(
+                                            StatusCode::ok,
+                                            $request->protocolVersion(),
+                                        ),
+                                    )),
+                            ),
+                    );
 
                 $response = $app->run(ServerRequest::of(
                     Url::of('/foo'),
                     Method::head,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame(405, $response->statusCode()->toInt());
                 $this->assertSame($protocol, $response->protocolVersion());
+            });
+    }
+
+    public function testMapRoute(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $response = Response::of(StatusCode::ok, $protocol);
+                $expected = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->route(Route::get(
+                        '/foo',
+                        Services::responseHandler,
+                    ))
+                    ->mapRoute(fn($component) => $component->map(
+                        function($out) use ($response, $expected) {
+                            $this->assertSame($out, $response);
+
+                            return $expected;
+                        },
+                    ))
+                    ->service(Services::responseHandler, static fn() => new class($response) {
+                        public function __construct(private $response)
+                        {
+                        }
+
+                        public function __invoke()
+                        {
+                            return Attempt::result($this->response);
+                        }
+                    });
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ))->unwrap();
+
+                $this->assertSame($expected, $response);
+            });
+    }
+
+    public function testRoutesAsEnumCases(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $responseA = Response::of(StatusCode::ok, $protocol);
+                $responseB = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->service(Services::serviceA, static fn() => static fn() => Attempt::result($responseA))
+                    ->service(Services::serviceB, static fn() => static fn() => Attempt::result($responseB))
+                    ->routes(Routes::class);
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ))->unwrap();
+
+                $this->assertSame($responseA, $response);
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/bar'),
+                    Method::get,
+                    $protocol,
+                ))->unwrap();
+
+                $this->assertSame($responseB, $response);
+            });
+    }
+
+    public function testRecoverRouteError(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $expected = Response::of(StatusCode::ok, $protocol);
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->service(Services::serviceA, static fn() => static fn() => Attempt::error(new \Exception))
+                    ->recoverRouteError(static fn() => Attempt::result($expected))
+                    ->routes(Routes::class);
+
+                $response = $app->run(ServerRequest::of(
+                    Url::of('/foo'),
+                    Method::get,
+                    $protocol,
+                ))->unwrap();
+
+                $this->assertSame($expected, $response);
             });
     }
 }

@@ -25,7 +25,7 @@ By default this application will write `Hello world` when you call `php entrypoi
 
 ## Handle commands
 
-This example reuses the AMQP clients defined in the [services topic](services.md).
+This example reuses the AMQP clients defined in the [services section](services.md).
 
 ```php
 use Innmind\Framework\{
@@ -35,29 +35,42 @@ use Innmind\Framework\{
 use Innmind\CLI\{
     Console,
     Command,
+    Command\Usage,
 };
-use Innmind\DI\Container;
+use Innmind\DI\{
+    Container,
+    Service,
+};
 use Innmind\AMQP\{
     Client,
     Command\Publish,
     Command\Get,
     Model\Basic\Message,
 };
-use Innmind\Immutable\Str;
+use Innmind\Immutable\{
+    Attempt,
+    Str,
+};
+
+enum Services implements Service
+{
+    case producerClient;
+    case consumerClient;
+}
 
 new class extends Cli {
     protected function configure(Application $app): Application
     {
         return $app
-            ->service('producer-client', /* see services topic */)
-            ->service('consumer-client', /* see services topic */)
-            ->command(static fn(Container $container) => new class($container('producer-client')) implements Command {
+            ->service(Services::producerClient, /* see services section */)
+            ->service(Services::consumerClient, /* see services section */)
+            ->command(static fn(Container $container) => new class($container(Services::producerClient)) implements Command {
                 public function __construct(
                     private Client $amqp,
                 ) {
                 }
 
-                public function __invoke(Console $console): Console
+                public function __invoke(Console $console): Attempt
                 {
                     $message = Message::of(Str::of(
                         $console->arguments()->get('url'),
@@ -67,46 +80,42 @@ new class extends Cli {
                         ->client
                         ->with(Publish::one($message)->to('some-exchange'))
                         ->run($console)
-                        ->match(
-                            static fn($console) => $console->output(
-                                Str::of("Message published\n"),
-                            ),
-                            static fn() => $console->error(
-                                Str::of("Something went wrong\n"),
-                            ),
-                        );
+                        ->flatMap(static fn($console) => $console->output(
+                            Str::of("Message published\n"),
+                        ))
+                        ->recover(static fn() => $console->error(
+                            Str::of("Something went wrong\n"),
+                        ));
                 }
 
-                public function usage(): string
+                public function usage(): Usage
                 {
-                    return 'publish url';
+                    return Usage::of('publish')->argument('url');
                 }
             })
-            ->command(static fn(Container $container) => new class($container('consumer-client')) implements Command {
+            ->command(static fn(Container $container) => new class($container(Services::consumerClient)) implements Command {
                 public function __construct(
                     private Client $amqp,
                 ) {
                 }
 
-                public function __invoke(Console $console): Console
+                public function __invoke(Console $console): Attempt
                 {
                     return $this
                         ->client
                         ->with(Get::of('some-queue'))
                         ->run($console)
-                        ->match(
-                            static fn($console) => $console->output(
-                                Str::of("One message pulled from queue\n"),
-                            ),
-                            static fn() => $console->error(
-                                Str::of("Something went wrong\n"),
-                            ),
-                        );
+                        ->flatMap(static fn($console) => $console->output(
+                            Str::of("One message pulled from queue\n"),
+                        ))
+                        ->recover(static fn() => $console->error(
+                            Str::of("Something went wrong\n"),
+                        ));
                 }
 
-                public function usage(): string
+                public function usage(): Usage
                 {
-                    return 'consume';
+                    return Usage::of('consume');
                 }
             });
     }
@@ -131,7 +140,9 @@ use Innmind\Framework\{
 use Innmind\CLI\{
     Console,
     Command,
+    Command\Usage,
 };
+use Innmind\Immutable\Attempt;
 
 new class extends Cli {
     protected function configure(Application $app): Application
@@ -144,14 +155,14 @@ new class extends Cli {
                     ) {
                     }
 
-                    public function __invoke(Console $console): Console
+                    public function __invoke(Console $console): Attempt
                     {
                         // do something before the real command
 
                         return ($this->inner)($console);
                     }
 
-                    public function usage(): string
+                    public function usage(): Usage
                     {
                         return $this->inner->usage();
                     }

@@ -9,49 +9,63 @@ use Innmind\Http\{
     Response\StatusCode,
 };
 use Innmind\Router\{
-    Route,
-    Under,
-    RequestMatcher\RequestMatcher,
+    Component,
+    Router as Route,
+    Any,
+    Handle,
+    Respond,
 };
 use Innmind\Immutable\{
     Maybe,
     Sequence,
+    Attempt,
+    SideEffect,
 };
 
 /**
  * @internal
  */
-final class Router implements RequestHandler
+final class Router
 {
-    /** @var Sequence<Route|Under> */
-    private Sequence $routes;
-    /** @var Maybe<\Closure(ServerRequest): Response> */
-    private Maybe $notFound;
-
     /**
-     * @param Sequence<Route|Under> $routes
-     * @param Maybe<\Closure(ServerRequest): Response> $notFound
+     * @param Sequence<Component<SideEffect, Response>> $routes
+     * @param Maybe<\Closure(ServerRequest): Attempt<Response>> $notFound
+     * @param \Closure(ServerRequest, \Throwable): Attempt<Response> $recover
      */
-    public function __construct(Sequence $routes, Maybe $notFound)
-    {
-        $this->routes = $routes;
-        $this->notFound = $notFound;
+    public function __construct(
+        private Sequence $routes,
+        private Maybe $notFound,
+        private \Closure $recover,
+    ) {
     }
 
-    public function __invoke(ServerRequest $request): Response
+    /**
+     * @return Attempt<Response>
+     */
+    public function __invoke(ServerRequest $request): Attempt
     {
-        $match = new RequestMatcher($this->routes);
-        $notFound = $this->notFound;
+        $recover = $this->recover;
 
-        return $match($request)
-            ->map(static fn($route) => $route->respondTo(...))
-            ->otherwise(static fn() => $notFound)
-            ->match(
-                static fn($handle) => $handle($request),
-                static fn() => Response::of(
-                    StatusCode::notFound,
-                    $request->protocolVersion(),
-                ),
-            );
+        /**
+         * @psalm-suppress MixedArgumentTypeCoercion
+         */
+        $route = Route::of(
+            Any::from($this->routes)
+                ->otherwise(Respond::withHttpErrors())
+                ->otherwise(static fn($e) => Handle::via(
+                    static fn($request) => $recover($request, $e),
+                ))
+                ->or(Handle::via(
+                    fn($request, SideEffect $_) => $this->notFound->match(
+                        static fn($handle) => $handle($request),
+                        static fn() => Attempt::result(Response::of(
+                            StatusCode::notFound,
+                            $request->protocolVersion(),
+                        )),
+                    ),
+                )),
+        );
+
+        return $route($request);
     }
 }

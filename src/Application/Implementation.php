@@ -3,11 +3,7 @@ declare(strict_types = 1);
 
 namespace Innmind\Framework\Application;
 
-use Innmind\Framework\{
-    Environment,
-    Http\Routes,
-    Http\RequestHandler,
-};
+use Innmind\Framework\Environment;
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\CLI\{
     Environment as CliEnv,
@@ -17,11 +13,18 @@ use Innmind\DI\{
     Container,
     Service,
 };
+use Innmind\Router\{
+    Component,
+    Pipe,
+};
 use Innmind\Http\{
     ServerRequest,
     Response,
 };
-use Innmind\Router\Route\Variables;
+use Innmind\Immutable\{
+    Attempt,
+    SideEffect,
+};
 
 /**
  * @internal
@@ -51,17 +54,16 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
-     * @param non-empty-string|Service $name
      * @param callable(Container, OperatingSystem, Environment): object $definition
      *
      * @return self<I, O>
      */
-    public function service(string|Service $name, callable $definition): self;
+    public function service(Service $name, callable $definition): self;
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Container, OperatingSystem, Environment): Command $command
+     * @param callable(Container): Command $command
      *
      * @return self<I, O>
      */
@@ -70,7 +72,7 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Command, Container, OperatingSystem, Environment): Command $map
+     * @param callable(Command, Container): Command $map
      *
      * @return self<I, O>
      */
@@ -79,44 +81,43 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
-     * @param literal-string $pattern
-     * @param callable(ServerRequest, Variables, Container, OperatingSystem, Environment): Response $handle
+     * @param callable(Pipe, Container): Component<SideEffect, Response> $handle
      *
      * @return self<I, O>
      */
-    public function route(string $pattern, callable $handle): self;
+    public function route(callable $handle): self;
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(Routes, Container, OperatingSystem, Environment): Routes $append
+     * @param callable(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $map
      *
      * @return self<I, O>
      */
-    public function appendRoutes(callable $append): self;
+    public function mapRoute(callable $map): self;
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(RequestHandler, Container, OperatingSystem, Environment): RequestHandler $map
+     * @param callable(ServerRequest, Container): Attempt<Response> $handle
      *
      * @return self<I, O>
      */
-    public function mapRequestHandler(callable $map): self;
+    public function routeNotFound(callable $handle): self;
 
     /**
      * @psalm-mutation-free
      *
-     * @param callable(ServerRequest, Container, OperatingSystem, Environment): Response $handle
+     * @param callable(ServerRequest, \Throwable, Container): Attempt<Response> $recover
      *
      * @return self<I, O>
      */
-    public function notFoundRequestHandler(callable $handle): self;
+    public function recoverRouteError(callable $recover): self;
 
     /**
      * @param I $input
      *
-     * @return O
+     * @return Attempt<O>
      */
-    public function run($input);
+    public function run($input): Attempt;
 }

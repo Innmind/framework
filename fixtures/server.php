@@ -6,16 +6,19 @@ require __DIR__.'/../vendor/autoload.php';
 use Innmind\Framework\{
     Application,
     Main\Async\Http,
-    Http\Routes,
 };
-use Innmind\Router\Route;
+use Innmind\Router\Respond;
+use Innmind\Http\Response\StatusCode;
 
 new class extends Http
 {
     protected function configure(Application $app): Application
     {
-        return $app->appendRoutes(static fn($routes) => $routes->add(
-            Route::literal('GET /hello'),
-        ));
+        return $app->route(
+            static fn($pipe) => $pipe
+                ->get()
+                ->endpoint('/hello')
+                ->pipe(Respond::with(StatusCode::ok)),
+        );
     }
 };

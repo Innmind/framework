@@ -2,7 +2,7 @@
 
 The best way to test your application is to move the whole configuration inside a [middleware](middlewares.md) that you can then reference in your tests.
 
-If your whole is contained in a middleware called `Kernel` and you use PHPUnit your test could look like this:
+If your whole app is contained in a middleware called `Kernel` and you use PHPUnit your test could look like this:
 
 ## For HTTP
 
@@ -34,7 +34,7 @@ final class AppTest extends TestCase
             Url::of('/'),
             Method::get,
             ProtocolVersion::v20,
-        ));
+        ))->unwrap();
 
         // $response is an instance of Response
         // write your assertions as usual
@@ -71,7 +71,7 @@ final class AppTest extends TestCase
             ['entrypoint.php'], // arguments
             $variables,
             '/somewhere/', // working directory
-        ));
+        ))->unwrap();
 
         $this->assertSame(
             [],
@@ -89,15 +89,15 @@ final class AppTest extends TestCase
 
 Since we use a declarative approach and that `Application` is _immutable_ we can extend the behaviour of our app in our tests.
 
-Say we want to write functional tests but we have an route that deletes data in a database but we can't verify the data is deleted through our routes. We can add a call to `mapRequestHandler` so we are in the context of our app and we can inject the test case to write our assertions.
+Say we want to write functional tests but we have a route that deletes data in a database but we can't verify the data is deleted through our routes. We can add a call to `mapRoute` so we are in the context of our app and we can inject the test case to write our assertions.
 
 ```php
 use Innmind\Framework\{
     Application,
     Environment,
-    Http\RequestHandler,
 };
 use Innmind\OperatingSystem\Factory;
+use Innmind\Router\Component;
 use Innmind\Http\{
     ServerRequest,
     Response,
@@ -105,6 +105,7 @@ use Innmind\Http\{
     ProtocolVersion,
 };
 use Innmind\Url\Url;
+use Innmind\Immutable\Attempt;
 use PHPUnit\Framework\TestCase;
 
 final class AppTest extends TestCase
@@ -116,37 +117,24 @@ final class AppTest extends TestCase
             'AMQP_URL' => 'amqp://guest:guest@localhost:5672/',
         ]))
             ->map(new Kernel)
-            ->mapRequestHandler(
-                fn($handler, $container) => new class($handler, $container('pdo'), $this) implements RequestHandler {
-                    public function __construct(
-                        private RequestHandler $handler,
-                        private \PDO $pdo,
-                        private TestCase $test,
-                    ) {
-                    }
+            ->mapRoute(static fn($route, $container) => $route->pipe(
+                Component::of(function($request, $response) use ($container) {
+                    $this->assertSame(
+                        [],
+                        $container(Services::pdo)
+                            ->query('SELECT * FROM some_column WHERE condition_that_should_return_nothing')
+                            ->fetchAll(),
+                    );
 
-                    public function __invoke(ServerRequest $request): Response
-                    {
-                        $response = ($this->handler)($request);
-
-                        $this->test->assertSame(
-                            [],
-                            $this
-                                ->pdo
-                                ->query('SELECT * FROM some_column WHERE condition_that_should_return_nothing')
-                                ->fetchAll(),
-                        );
-
-                        return $response;
-                    }
-                },
-            );
+                    return Attempt::result($response);
+                }),
+            ));
 
         $response = $app->run(ServerRequest::of(
             Url::of('/some-route/some-id'),
             Method::delete,
             ProtocolVersion::v20,
-        ));
+        ))->unwrap();
 
         // $response is an instance of Response
         // write your assertions as usual

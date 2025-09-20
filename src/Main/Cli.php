@@ -12,15 +12,13 @@ use Innmind\CLI\{
     Environment,
 };
 use Innmind\OperatingSystem\OperatingSystem;
+use Innmind\Immutable\Attempt;
 
 abstract class Cli extends Main
 {
-    protected function main(Environment $env, OperatingSystem $os): Environment
+    #[\Override]
+    protected function main(Environment $env, OperatingSystem $os): Attempt
     {
-        /**
-         * @psalm-suppress InvalidReturnStatement Let the app crash in case of a misuse
-         * @var Environment
-         */
         return static::configure(Application::cli($os, AppEnv::of($env->variables())))->run($env);
     }
 

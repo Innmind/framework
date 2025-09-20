@@ -1,5 +1,42 @@
 # Changelog
 
+## 3.0.0 - 2025-09-20
+
+### Added
+
+- `Innmind\Framework\Http\Route`
+- `Innmind\Framework\Http\Route\Reference`
+- `Innmind\Framework\Application::mapRoute()`
+- `Innmind\Framework\Application::routes(class-string<Innmind\Framework\Http\Route\Reference>)`
+- `Innmind\Framework\Application::recoverRouteError()`
+- `Innmind\Framework\Cli\Command`
+
+### Changed
+
+- Requires `innmind/foundation:~1.9`
+- Requires `innmind/di:~3.0`
+- `Innmind\Framework\Application::route()` callable must now return a `Innmind\Router\Component`
+- `Innmind\Framework\Application::route()` callable first parameter now is a `Innmint\Router\Pipe`
+- `Innmind\Framework\Application::route()` first parameter must now be expressed via a component inside the callable
+- `Innminf\Framework\Application::notFoundRequestHandler()` callable must now return an `Innmind\Immutable\Attempt<Response>`
+- `Innminf\Framework\Application::notFoundRequestHandler()` has been renamed `::routeNotFound()`
+- `Innmind\Framework\Application::mapCommand()` callable now longer has access to `OperatingSystem` and `Environment` (use services instead)
+- `Innmind\Framework\Application::run()` always return an `Innmind\Immutable\Attempt`
+
+### Removed
+
+- The ability to use `string`s to reference services
+- `Innmind\Framework\Http\Service`
+- `Innmind\Framework\Http\To`
+- `Innmind\Framework\Http\Routes`
+- `Innmind\Framework\Application::appendRoutes()`
+- `Innmind\Framework\Application::mapRequestHandler()`
+- `Innmind\Framework\Http\RequestHandler`
+
+### Fixed
+
+- PHP `8.4` deprecations
+
 ## 2.3.1 - 2024-10-26
 
 ### Changed
