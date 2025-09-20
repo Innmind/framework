@@ -19,5 +19,6 @@ interface Reference extends \UnitEnum
     /**
      * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
+    #[\NoDiscard]
     public function route(): callable;
 }

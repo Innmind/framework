@@ -41,6 +41,7 @@ final class Command implements CommandInterface
      *
      * @param class-string<CommandInterface> $class
      */
+    #[\NoDiscard]
     public static function of(
         string $class,
         Service ...$dependencies,
