@@ -19,17 +19,13 @@ abstract class Http extends Main
     #[\Override]
     protected function main(Environment $env, OperatingSystem $os): Attempt
     {
-        /**
-         * @psalm-suppress InvalidReturnStatement Let the app crash in case of a misuse
-         * @var Attempt<Environment>
-         */
         return static::configure(Application::asyncHttp($os))->run($env);
     }
 
     /**
-     * @param Application<Environment, Attempt<Environment>> $app
+     * @param Application<Environment, Environment> $app
      *
-     * @return Application<Environment, Attempt<Environment>>
+     * @return Application<Environment, Environment>
      */
     abstract protected function configure(Application $app): Application;
 }

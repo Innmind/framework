@@ -29,7 +29,7 @@ use Innmind\Immutable\{
 /**
  * @internal
  * @template I of ServerRequest|CliEnv
- * @template O of Response|Attempt<CliEnv>
+ * @template O of Response|CliEnv
  */
 interface Implementation
 {
@@ -117,7 +117,7 @@ interface Implementation
     /**
      * @param I $input
      *
-     * @return O
+     * @return Attempt<O>
      */
-    public function run($input);
+    public function run($input): Attempt;
 }

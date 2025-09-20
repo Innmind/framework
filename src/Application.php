@@ -27,7 +27,7 @@ use Innmind\Immutable\{
 
 /**
  * @template I of ServerRequest|CliEnv
- * @template O of Response|Attempt<CliEnv>
+ * @template O of Response|CliEnv
  */
 final class Application
 {
@@ -55,7 +55,7 @@ final class Application
     /**
      * @psalm-pure
      *
-     * @return self<CliEnv, Attempt<CliEnv>>
+     * @return self<CliEnv, CliEnv>
      */
     #[\NoDiscard]
     public static function cli(OperatingSystem $os, Environment $env): self
@@ -67,7 +67,7 @@ final class Application
      * @psalm-pure
      * @experimental
      *
-     * @return self<CliEnv, Attempt<CliEnv>>
+     * @return self<CliEnv, CliEnv>
      */
     #[\NoDiscard]
     public static function asyncHttp(OperatingSystem $os): self
@@ -230,10 +230,10 @@ final class Application
     /**
      * @param I $input
      *
-     * @return O
+     * @return Attempt<O>
      */
     #[\NoDiscard]
-    public function run(CliEnv|ServerRequest $input): Attempt|Response
+    public function run(CliEnv|ServerRequest $input): Attempt
     {
         return $this->app->run($input);
     }

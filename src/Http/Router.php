@@ -39,7 +39,10 @@ final class Router
     ) {
     }
 
-    public function __invoke(ServerRequest $request): Response
+    /**
+     * @return Attempt<Response>
+     */
+    public function __invoke(ServerRequest $request): Attempt
     {
         $recover = $this->recover;
 
@@ -63,6 +66,6 @@ final class Router
                 )),
         );
 
-        return $route($request)->unwrap();
+        return $route($request);
     }
 }

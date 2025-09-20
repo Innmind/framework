@@ -17,6 +17,7 @@ use Innmind\Http\{
 
 abstract class Http extends Main
 {
+    /** @var Application<ServerRequest, Response> */
     private Application $app;
 
     #[\Override]
@@ -28,11 +29,7 @@ abstract class Http extends Main
     #[\Override]
     protected function main(ServerRequest $request): Response
     {
-        /**
-         * @psalm-suppress InvalidReturnStatement Let the app crash in case of a misuse
-         * @var Response
-         */
-        return $this->app->run($request);
+        return $this->app->run($request)->unwrap();
     }
 
     /**

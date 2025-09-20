@@ -37,7 +37,7 @@ use Innmind\Immutable\{
 /**
  * @experimental
  * @internal
- * @implements Implementation<CliEnv, Attempt<CliEnv>>
+ * @implements Implementation<CliEnv, CliEnv>
  */
 final class Http implements Implementation
 {
@@ -247,7 +247,7 @@ final class Http implements Implementation
     }
 
     #[\Override]
-    public function run($input)
+    public function run($input): Attempt
     {
         $map = $this->map;
         $container = $this->container;
@@ -284,7 +284,7 @@ final class Http implements Implementation
                     static fn($request, $e) => $recover($request, $e, $container),
                 );
 
-                return $router($request);
+                return $router($request)->unwrap();
             },
         ));
 
