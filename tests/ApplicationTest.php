@@ -912,7 +912,7 @@ class ApplicationTest extends TestCase
                     $url,
                     $method,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame(StatusCode::notFound, $response->statusCode());
                 $this->assertSame($protocol, $response->protocolVersion());
@@ -962,7 +962,7 @@ class ApplicationTest extends TestCase
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseA, $response);
 
@@ -970,7 +970,7 @@ class ApplicationTest extends TestCase
                     Url::of('/bar'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseB, $response);
             });
@@ -1019,7 +1019,7 @@ class ApplicationTest extends TestCase
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseA, $response);
 
@@ -1027,7 +1027,7 @@ class ApplicationTest extends TestCase
                     Url::of('/bar'),
                     Method::post,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseB, $response);
             });
@@ -1071,7 +1071,7 @@ class ApplicationTest extends TestCase
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($expected, $response);
             });
@@ -1114,7 +1114,7 @@ class ApplicationTest extends TestCase
                     Url::of('/foo'),
                     $method,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($expected, $response);
             });
@@ -1149,7 +1149,7 @@ class ApplicationTest extends TestCase
                     $url,
                     $method,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($expected, $response);
             });
@@ -1189,7 +1189,7 @@ class ApplicationTest extends TestCase
                     Url::of('/foo'),
                     Method::head,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame(405, $response->statusCode()->toInt());
                 $this->assertSame($protocol, $response->protocolVersion());
@@ -1240,7 +1240,7 @@ class ApplicationTest extends TestCase
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($expected, $response);
             });
@@ -1272,7 +1272,7 @@ class ApplicationTest extends TestCase
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseA, $response);
 
@@ -1280,7 +1280,7 @@ class ApplicationTest extends TestCase
                     Url::of('/bar'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($responseB, $response);
             });
@@ -1311,7 +1311,7 @@ class ApplicationTest extends TestCase
                     Url::of('/foo'),
                     Method::get,
                     $protocol,
-                ));
+                ))->unwrap();
 
                 $this->assertSame($expected, $response);
             });
