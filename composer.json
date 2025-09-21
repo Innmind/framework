@@ -16,9 +16,8 @@
     },
     "require": {
         "php": "~8.2",
-        "innmind/foundation": "~1.9",
-        "innmind/di": "~3.0",
-        "innmind/router": "~5.2"
+        "innmind/foundation": "~1.10",
+        "innmind/di": "~3.0"
     },
     "autoload": {
         "psr-4": {

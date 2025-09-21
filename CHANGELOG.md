@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Requires `innmind/foundation:~1.10`
+
 ## 3.0.0 - 2025-09-20
 
 ### Added
