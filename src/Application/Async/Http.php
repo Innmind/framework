@@ -32,6 +32,7 @@ use Innmind\Immutable\{
     Sequence,
     Attempt,
     SideEffect,
+    Map,
 };
 
 /**
@@ -258,7 +259,7 @@ final class Http implements Implementation
 
         $run = Commands::of(Serve::of(
             $this->os,
-            static function(ServerRequest $request, OperatingSystem $os) use (
+            static function(ServerRequest $request, OperatingSystem $os, Map $env) use (
                 $map,
                 $container,
                 $routes,
@@ -266,7 +267,7 @@ final class Http implements Implementation
                 $mapRoute,
                 $recover,
             ): Response {
-                $env = Environment::http($request->environment());
+                $env = Environment::of($env);
                 [$os, $env] = $map($os, $env);
                 $container = $container($os, $env)->build();
                 $pipe = Pipe::new();

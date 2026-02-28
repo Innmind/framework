@@ -50,7 +50,7 @@ use Innmind\Framework\{
     Environment,
 };
 use Innmind\OperatingSystem\Factory;
-use Innmind\CLI\Environment\InMemory;
+use Innmind\CLI\Environment;
 use PHPUnit\Framework\TestCase;
 
 final class AppTest extends TestCase
@@ -65,7 +65,7 @@ final class AppTest extends TestCase
             new Kernel,
         );
 
-        $environment = $app->run(InMemory::of(
+        $environment = $app->run(Environment::inMemory(
             [], // input chunks
             false, // interactive
             ['entrypoint.php'], // arguments

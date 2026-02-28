@@ -4,7 +4,6 @@ declare(strict_types = 1);
 namespace Innmind\Framework;
 
 use Innmind\Framework\Exception\LogicException;
-use Innmind\Http\ServerRequest\Environment as HttpEnvironment;
 use Innmind\Immutable\{
     Map,
     Maybe,
@@ -42,18 +41,6 @@ final class Environment
     public static function test(array $variables): self
     {
         return self::of(Map::of(...$variables));
-    }
-
-    /**
-     * @psalm-pure
-     */
-    #[\NoDiscard]
-    public static function http(HttpEnvironment $env): self
-    {
-        return $env->reduce(
-            new self(Map::of()),
-            static fn(self $env, $key, $value) => $env->with($key, $value),
-        );
     }
 
     #[\NoDiscard]

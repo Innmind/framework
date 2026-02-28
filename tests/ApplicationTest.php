@@ -14,7 +14,7 @@ use Innmind\Framework\{
 };
 use Innmind\OperatingSystem\Factory;
 use Innmind\CLI\{
-    Environment\InMemory,
+    Environment as CliEnv,
     Command,
     Command\Usage,
     Console,
@@ -105,7 +105,7 @@ class ApplicationTest extends TestCase
             ->prove(function($inputs, $interactive, $arguments, $variables) {
                 $app = Application::cli(Factory::build(), $env = Environment::test($variables));
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     $arguments,
@@ -113,7 +113,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(["Hello world\n"], $env->outputs());
+                $this->assertSame(
+                    ["Hello world\n"],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -147,7 +153,7 @@ class ApplicationTest extends TestCase
                         return $in;
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     $arguments,
@@ -173,7 +179,7 @@ class ApplicationTest extends TestCase
                         return $env;
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     $arguments,
@@ -216,7 +222,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -224,7 +230,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['my command output'], $env->outputs());
+                $this->assertSame(
+                    ['my command output'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -271,7 +283,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name', 'my-command-a'],
@@ -279,13 +291,19 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['my command A output'], $env->outputs());
+                $this->assertSame(
+                    ['my command A output'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
                 ));
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name', 'my-command-b'],
@@ -293,7 +311,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['my command B output'], $env->outputs());
+                $this->assertSame(
+                    ['my command B output'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -320,7 +344,7 @@ class ApplicationTest extends TestCase
                 $app = Application::cli(Factory::build(), Environment::test($variables))
                     ->service(Services::service, static fn() => throw new \Exception);
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     $arguments,
@@ -328,7 +352,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(["Hello world\n"], $env->outputs());
+                $this->assertSame(
+                    ["Hello world\n"],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -370,7 +400,7 @@ class ApplicationTest extends TestCase
                     })
                     ->service(Services::service, static fn() => Str::of('my command output'));
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -378,7 +408,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['my command output'], $env->outputs());
+                $this->assertSame(
+                    ['my command output'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -421,7 +457,7 @@ class ApplicationTest extends TestCase
                     ->service(Services::serviceA, static fn($get) => Str::of('my command output')->append($get(Services::serviceB)->toString()))
                     ->service(Services::serviceB, static fn() => Str::of(' twice'));
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -429,7 +465,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['my command output twice'], $env->outputs());
+                $this->assertSame(
+                    ['my command output twice'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -481,7 +523,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name', 'my-command-a'],
@@ -489,7 +531,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['my command A output'], $env->outputs());
+                $this->assertSame(
+                    ['my command A output'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -523,7 +571,7 @@ class ApplicationTest extends TestCase
                         return Str::of($output);
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name', 'help'],
@@ -531,14 +579,20 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame([" lazy  \n", " lazy  \n"], $env->outputs());
+                $this->assertSame(
+                    [" lazy  \n", " lazy  \n"],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
                 ));
                 $this->assertFalse($loaded);
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name', 'lazy'],
@@ -546,7 +600,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame([$output], $env->outputs());
+                $this->assertSame(
+                    [$output],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -601,7 +661,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -609,7 +669,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['my command output', 'decorated'], $env->outputs());
+                $this->assertSame(
+                    ['my command output', 'decorated'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -679,7 +745,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name', 'my-command-b'],
@@ -687,7 +753,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['my command output B', (string) $testRuns], $env->outputs());
+                $this->assertSame(
+                    ['my command output B', (string) $testRuns],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -762,7 +834,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -770,7 +842,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['bar', 'baz', 'foo'], $env->outputs());
+                $this->assertSame(
+                    ['bar', 'baz', 'foo'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -821,7 +899,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -829,7 +907,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['bar'], $env->outputs());
+                $this->assertSame(
+                    ['bar'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,
@@ -874,7 +958,7 @@ class ApplicationTest extends TestCase
                         }
                     });
 
-                $env = $app->run(InMemory::of(
+                $env = $app->run(CliEnv::inMemory(
                     $inputs,
                     $interactive,
                     ['script-name'],
@@ -882,7 +966,13 @@ class ApplicationTest extends TestCase
                     '/',
                 ))->unwrap();
 
-                $this->assertSame(['bar', 'foo=" \n watev; bar!'], $env->outputs());
+                $this->assertSame(
+                    ['bar', 'foo=" \n watev; bar!'],
+                    $env
+                        ->outputted()
+                        ->map(static fn($chunk) => $chunk[0]->toString())
+                        ->toList(),
+                );
                 $this->assertNull($env->exitCode()->match(
                     static fn($exit) => $exit,
                     static fn() => null,

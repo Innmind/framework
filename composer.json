@@ -15,8 +15,8 @@
         "issues": "http://github.com/Innmind/framework/issues"
     },
     "require": {
-        "php": "~8.2",
-        "innmind/foundation": "~1.10",
+        "php": "~8.4",
+        "innmind/foundation": "~2.1",
         "innmind/di": "~3.0"
     },
     "autoload": {
@@ -30,14 +30,14 @@
         }
     },
     "require-dev": {
-        "innmind/static-analysis": "^1.2.1",
+        "innmind/static-analysis": "~1.3",
         "innmind/black-box": "~6.5",
         "innmind/coding-standard": "~2.0",
-        "innmind/async-http-server": "~4.0"
+        "innmind/async-http-server": "~5.0"
     },
     "conflict": {
         "innmind/black-box": "<6.0|~7.0",
-        "innmind/async-http-server": "<3.0|~5.0"
+        "innmind/async-http-server": "<4.0|~6.0"
     },
     "suggest": {
         "innmind/black-box": "For property based testing",
