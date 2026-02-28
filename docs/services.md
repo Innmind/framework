@@ -59,7 +59,7 @@ use Innmind\Framework\{
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\AMQP\Factory;
 use Innmind\IO\Sockets\Internet\Transport;
-use Innmind\TimeContinuum\Period;
+use Innmind\Time\Period;
 use Innmind\Url\Url;
 
 new class extends Http|Cli {
@@ -96,7 +96,7 @@ use Innmind\Framework\{
 use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\AMQP\Factory;
 use Innmind\IO\Sockets\Internet\Transport;
-use Innmind\TimeContinuum\Period;
+use Innmind\Time\Period;
 use Innmind\Url\Url;
 
 new class extends Http|Cli {

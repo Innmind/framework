@@ -101,7 +101,7 @@ use Innmind\Framework\{
     Application,
 };
 use Innmind\OperatingSystem\OperatingSystem;
-use Innmind\TimeContinuum\{
+use Innmind\Time\{
     Clock,
     Format,
 };
