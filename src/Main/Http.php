@@ -12,8 +12,8 @@ use Innmind\OperatingSystem\OperatingSystem;
 use Innmind\Http\{
     ServerRequest,
     Response,
-    ServerRequest\Environment,
 };
+use Innmind\Immutable\Map;
 
 abstract class Http extends Main
 {
@@ -21,9 +21,9 @@ abstract class Http extends Main
     private Application $app;
 
     #[\Override]
-    protected function preload(OperatingSystem $os, Environment $env): void
+    protected function preload(OperatingSystem $os, Map $env): void
     {
-        $this->app = static::configure(Application::http($os, AppEnv::http($env)));
+        $this->app = static::configure(Application::http($os, AppEnv::of($env)));
     }
 
     #[\Override]

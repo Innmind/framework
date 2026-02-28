@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.0.0 - 2026-02-28
+
+- Requires PHP `8.4`
+- Requires `innmind/foundation:~2.1`
+
 ## 3.0.1 - 2025-09-21
 
 ### Changed

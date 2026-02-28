@@ -41,7 +41,7 @@ class FunctionalTest extends TestCase
 
     public function tearDown(): void
     {
-        $this->server->pid()->match(
+        $_ = $this->server->pid()->match(
             fn($pid) => $this->os->control()->processes()->kill(
                 $pid,
                 Signal::kill,
