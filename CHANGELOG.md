@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.0.1 - 2026-03-19
+
+### Fixed
+
+- The type returned by `Route::get()` (and other methods) was not compatible with `Application::route()`
+
 ## 4.0.0 - 2026-02-28
 
 - Requires PHP `8.4`

@@ -15,7 +15,10 @@ use Innmind\DI\{
 };
 use Innmind\Http\Response;
 use Innmind\UrlTemplate\Template;
-use Innmind\Immutable\Attempt;
+use Innmind\Immutable\{
+    Attempt,
+    SideEffect,
+};
 
 final class Route
 {
@@ -29,13 +32,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function get(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->get()
@@ -51,13 +55,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function post(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->post()
@@ -73,13 +78,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function put(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->put()
@@ -95,13 +101,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function patch(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->patch()
@@ -117,13 +124,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function delete(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->delete()
@@ -139,13 +147,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function options(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->options()
@@ -161,13 +170,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function trace(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->trace()
@@ -183,13 +193,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function connect(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->connect()
@@ -205,13 +216,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function head(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->head()
@@ -227,13 +239,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function link(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->link()
@@ -249,13 +262,14 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function unlink(
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->unlink()
