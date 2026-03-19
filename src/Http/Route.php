@@ -15,7 +15,10 @@ use Innmind\DI\{
 };
 use Innmind\Http\Response;
 use Innmind\UrlTemplate\Template;
-use Innmind\Immutable\Attempt;
+use Innmind\Immutable\{
+    Attempt,
+    SideEffect,
+};
 
 final class Route
 {
@@ -29,7 +32,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function get(
@@ -51,7 +54,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function post(
@@ -73,7 +76,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function put(
@@ -95,7 +98,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function patch(
@@ -117,7 +120,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function delete(
@@ -139,7 +142,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function options(
@@ -161,7 +164,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function trace(
@@ -183,7 +186,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function connect(
@@ -205,7 +208,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function head(
@@ -227,7 +230,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function link(
@@ -249,7 +252,7 @@ final class Route
      * @param literal-string|Template|Alias $endpoint
      * @param Service<object&(callable(mixed...): Attempt<Response>)> $handler
      *
-     * @return callable(Pipe, Container): Component<mixed, Response>
+     * @return callable(Pipe, Container): Component<SideEffect, Response>
      */
     #[\NoDiscard]
     public static function unlink(
