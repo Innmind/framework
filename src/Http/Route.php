@@ -39,6 +39,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->get()
@@ -61,6 +62,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->post()
@@ -83,6 +85,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->put()
@@ -105,6 +108,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->patch()
@@ -127,6 +131,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->delete()
@@ -149,6 +154,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->options()
@@ -171,6 +177,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->trace()
@@ -193,6 +200,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->connect()
@@ -215,6 +223,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->head()
@@ -237,6 +246,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->link()
@@ -259,6 +269,7 @@ final class Route
         string|Template|Alias $endpoint,
         Service $handler,
     ): callable {
+        /** @psalm-suppress MixedReturnTypeCoercion Since it accepts anything, SideEffect as input is ok */
         return static fn(Pipe $pipe, Container $get) => $pipe
             ->endpoint($endpoint)
             ->unlink()
