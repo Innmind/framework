@@ -77,7 +77,7 @@ final class Http implements Implementation
             $os,
             static fn(OperatingSystem $os, Environment $env) => [$os, $env],
             static fn() => Builder::new(),
-            Sequence::lazyStartingWith(),
+            Sequence::of(),
             static fn(Component $component) => $component,
             static fn(Component $component) => $component,
             $notFound,
@@ -285,7 +285,9 @@ final class Http implements Implementation
     {
         $map = $this->map;
         $container = $this->container;
-        $routes = $this->routes;
+        $routes = Sequence::lazyStartingWith($this->routes)->flatMap(
+            static fn($routes) => $routes,
+        );
         $notFound = $this->notFound;
         $mapRoute = $this->mapRoute;
         $mapRoutes = $this->mapRoutes;

@@ -6,6 +6,10 @@
 
 - `Innmind\Framework\Application::mapRoutes()`
 
+### Changed
+
+- Reduced routes memory footprint
+
 ## 4.0.2 - 2026-04-12
 
 ### Fixed
