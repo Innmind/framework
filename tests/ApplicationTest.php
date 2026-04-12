@@ -1407,7 +1407,6 @@ class ApplicationTest extends TestCase
             });
     }
 
-    #[\Innmind\BlackBox\PHPUnit\Framework\Attributes\Group('wip')]
     public function testRouteErrorIsNotSwallowed(): BlackBox\Proof
     {
         return $this
