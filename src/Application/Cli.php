@@ -182,6 +182,15 @@ final class Cli implements Implementation
      * @psalm-mutation-free
      */
     #[\Override]
+    public function mapRoutes(callable $map): self
+    {
+        return $this;
+    }
+
+    /**
+     * @psalm-mutation-free
+     */
+    #[\Override]
     public function routeNotFound(callable $handle): self
     {
         return $this;

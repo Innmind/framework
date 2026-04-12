@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `Innmind\Framework\Application::mapRoutes()`
+
 ## 4.0.2 - 2026-04-12
 
 ### Fixed

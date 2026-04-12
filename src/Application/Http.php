@@ -40,6 +40,7 @@ final class Http implements Implementation
      * @param \Closure(OperatingSystem, Environment): Builder $container
      * @param Sequence<callable(Pipe, Container): Component<SideEffect, Response>> $routes
      * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoute
+     * @param \Closure(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $mapRoutes
      * @param Maybe<callable(ServerRequest, Container): Attempt<Response>> $notFound
      * @param \Closure(ServerRequest, \Throwable, Container): Attempt<Response> $recover
      */
@@ -49,6 +50,7 @@ final class Http implements Implementation
         private \Closure $container,
         private Sequence $routes,
         private \Closure $mapRoute,
+        private \Closure $mapRoutes,
         private Maybe $notFound,
         private \Closure $recover,
     ) {
@@ -68,6 +70,7 @@ final class Http implements Implementation
             static fn() => Builder::new(),
             Sequence::lazyStartingWith(),
             static fn(Component $component) => $component,
+            static fn(Component $component) => $component,
             $notFound,
             static fn(ServerRequest $request, \Throwable $e) => Attempt::error($e),
         );
@@ -86,6 +89,7 @@ final class Http implements Implementation
             $this->container,
             $this->routes,
             $this->mapRoute,
+            $this->mapRoutes,
             $this->notFound,
             $this->recover,
         );
@@ -104,6 +108,7 @@ final class Http implements Implementation
             $this->container,
             $this->routes,
             $this->mapRoute,
+            $this->mapRoutes,
             $this->notFound,
             $this->recover,
         );
@@ -126,6 +131,7 @@ final class Http implements Implementation
             ),
             $this->routes,
             $this->mapRoute,
+            $this->mapRoutes,
             $this->notFound,
             $this->recover,
         );
@@ -161,6 +167,7 @@ final class Http implements Implementation
             $this->container,
             ($this->routes)($handle),
             $this->mapRoute,
+            $this->mapRoutes,
             $this->notFound,
             $this->recover,
         );
@@ -183,6 +190,30 @@ final class Http implements Implementation
                 $previous($component, $get),
                 $get,
             ),
+            $this->mapRoutes,
+            $this->notFound,
+            $this->recover,
+        );
+    }
+
+    /**
+     * @psalm-mutation-free
+     */
+    #[\Override]
+    public function mapRoutes(callable $map): self
+    {
+        $previous = $this->mapRoutes;
+
+        return new self(
+            $this->os,
+            $this->env,
+            $this->container,
+            $this->routes,
+            $this->mapRoute,
+            static fn($component, $get) => $map(
+                $previous($component, $get),
+                $get,
+            ),
             $this->notFound,
             $this->recover,
         );
@@ -200,6 +231,7 @@ final class Http implements Implementation
             $this->container,
             $this->routes,
             $this->mapRoute,
+            $this->mapRoutes,
             Maybe::just($handle),
             $this->recover,
         );
@@ -219,6 +251,7 @@ final class Http implements Implementation
             $this->container,
             $this->routes,
             $this->mapRoute,
+            $this->mapRoutes,
             $this->notFound,
             static fn($request, $e, $container) => $previous($request, $e, $container)->recover(
                 static fn($e) => $recover($request, $e, $container),
@@ -231,6 +264,7 @@ final class Http implements Implementation
     {
         $container = ($this->container)($this->os, $this->env)->build();
         $mapRoute = $this->mapRoute;
+        $mapRoutes = $this->mapRoutes;
         $recover = $this->recover;
         $pipe = Pipe::new();
         $routes = $this
@@ -238,6 +272,7 @@ final class Http implements Implementation
             ->map(static fn($handle) => $handle($pipe, $container))
             ->map(static fn($component) => $mapRoute($component, $container));
         $router = new Router(
+            static fn($component) => $mapRoutes($component, $container),
             $routes,
             $this->notFound->map(
                 static fn($handle) => static fn(ServerRequest $request) => $handle(
