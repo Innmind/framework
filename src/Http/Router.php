@@ -6,7 +6,6 @@ namespace Innmind\Framework\Http;
 use Innmind\Http\{
     ServerRequest,
     Response,
-    Response\StatusCode,
 };
 use Innmind\Router\{
     Component,
@@ -14,6 +13,8 @@ use Innmind\Router\{
     Any,
     Handle,
     Respond,
+    Exception\NotFound,
+    Exception\NoRouteProvided,
 };
 use Innmind\Immutable\{
     Maybe,
@@ -45,24 +46,28 @@ final class Router
     public function __invoke(ServerRequest $request): Attempt
     {
         $recover = $this->recover;
+        $notFound = $this->notFound;
 
         /**
          * @psalm-suppress MixedArgumentTypeCoercion
          */
         $route = Route::of(
             Any::from($this->routes)
+                ->mapError(static fn($e) => match (true) {
+                    $e instanceof NoRouteProvided => new NotFound,
+                    default => $e,
+                })
+                ->otherwise(static fn(\Throwable $e) => Component::of(
+                    static fn($request) => $notFound
+                        ->filter(static fn() => $e instanceof NotFound)
+                        ->match(
+                            static fn($handle) => $handle($request),
+                            static fn() => Attempt::error($e),
+                        ),
+                ))
                 ->otherwise(Respond::withHttpErrors())
                 ->otherwise(static fn($e) => Handle::via(
                     static fn($request) => $recover($request, $e),
-                ))
-                ->or(Handle::via(
-                    fn($request, SideEffect $_) => $this->notFound->match(
-                        static fn($handle) => $handle($request),
-                        static fn() => Attempt::result(Response::of(
-                            StatusCode::notFound,
-                            $request->protocolVersion(),
-                        )),
-                    ),
                 )),
         );
 
