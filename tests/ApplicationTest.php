@@ -19,6 +19,7 @@ use Innmind\CLI\{
     Command\Usage,
     Console,
 };
+use Innmind\Router\Component;
 use Innmind\DI\Service;
 use Innmind\Http\{
     ServerRequest,
@@ -1407,7 +1408,6 @@ class ApplicationTest extends TestCase
             });
     }
 
-    #[\Innmind\BlackBox\PHPUnit\Framework\Attributes\Group('wip')]
     public function testRouteErrorIsNotSwallowed(): BlackBox\Proof
     {
         return $this
@@ -1440,6 +1440,75 @@ class ApplicationTest extends TestCase
                     );
 
                 $this->assertSame($expected, $error);
+            });
+    }
+
+    public function testMapRoutes(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $count = 0;
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->service(Services::serviceA, static fn() => static fn($request) => Attempt::result(Response::of(
+                        StatusCode::ok,
+                        $request->protocolVersion(),
+                    )))
+                    ->service(Services::serviceB, static fn() => static fn($request) => Attempt::result(Response::of(
+                        StatusCode::ok,
+                        $request->protocolVersion(),
+                    )))
+                    ->routes(Routes::class)
+                    ->mapRoutes(
+                        static function($previous) use (&$count) {
+                            return Component::of(
+                                static function($_, $input) use (&$count) {
+                                    ++$count;
+
+                                    return Attempt::result($input);
+                                },
+                            )->pipe($previous);
+                        },
+                    );
+
+                $result = $app
+                    ->run(ServerRequest::of(
+                        Url::of('/foo'),
+                        Method::get,
+                        $protocol,
+                    ))
+                    ->match(
+                        static fn() => true,
+                        static fn() => false,
+                    );
+
+                $this->assertTrue($result);
+                $this->assertSame(1, $count);
+
+                $count = 0;
+
+                $result = $app
+                    ->run(ServerRequest::of(
+                        Url::of('/bar'),
+                        Method::get,
+                        $protocol,
+                    ))
+                    ->match(
+                        static fn() => true,
+                        static fn() => false,
+                    );
+
+                $this->assertTrue($result);
+                $this->assertSame(1, $count);
             });
     }
 }

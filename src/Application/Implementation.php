@@ -99,6 +99,15 @@ interface Implementation
     /**
      * @psalm-mutation-free
      *
+     * @param callable(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $map
+     *
+     * @return self<I, O>
+     */
+    public function mapRoutes(callable $map): self;
+
+    /**
+     * @psalm-mutation-free
+     *
      * @param callable(ServerRequest, Container): Attempt<Response> $handle
      *
      * @return self<I, O>
