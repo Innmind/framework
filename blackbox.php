@@ -10,9 +10,8 @@ use Innmind\BlackBox\{
 };
 
 Application::new($argv)
-    ->when(
-        \getenv('ENABLE_COVERAGE') !== false,
-        static fn(Application $app) => $app
+    ->map(static fn($app) => match (\getenv('BLACKBOX_ENV')) {
+        'coverage' => $app
             ->codeCoverage(
                 CodeCoverage::of(
                     __DIR__.'/src/',
@@ -22,6 +21,7 @@ Application::new($argv)
                     ->enableWhen(true),
             )
             ->scenariiPerProof(1),
-    )
+        default => $app,
+    })
     ->tryToProve(Load::directory(__DIR__.'/tests/'))
     ->exit();
