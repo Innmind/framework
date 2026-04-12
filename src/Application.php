@@ -189,6 +189,11 @@ final class Application
     }
 
     /**
+     * This wraps each route individually.
+     *
+     * This means that the code may be executed multiple times until it reaches
+     * the appropriate route.
+     *
      * @psalm-mutation-free
      *
      * @param callable(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $map
@@ -199,6 +204,23 @@ final class Application
     public function mapRoute(callable $map): self
     {
         return new self($this->app->mapRoute($map));
+    }
+
+    /**
+     * This wraps all routes as whole.
+     *
+     * This means that the code will be executed only once.
+     *
+     * @psalm-mutation-free
+     *
+     * @param callable(Component<SideEffect, Response>, Container): Component<SideEffect, Response> $map
+     *
+     * @return self<I, O>
+     */
+    #[\NoDiscard]
+    public function mapRoutes(callable $map): self
+    {
+        return new self($this->app->mapRoutes($map));
     }
 
     /**

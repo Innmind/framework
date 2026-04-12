@@ -29,11 +29,13 @@ use Innmind\Immutable\{
 final class Router
 {
     /**
+     * @param \Closure(Component<SideEffect, Response>): Component<SideEffect, Response> $mapRoutes
      * @param Sequence<Component<SideEffect, Response>> $routes
      * @param Maybe<\Closure(ServerRequest): Attempt<Response>> $notFound
      * @param \Closure(ServerRequest, \Throwable): Attempt<Response> $recover
      */
     public function __construct(
+        private \Closure $mapRoutes,
         private Sequence $routes,
         private Maybe $notFound,
         private \Closure $recover,
@@ -52,7 +54,7 @@ final class Router
          * @psalm-suppress MixedArgumentTypeCoercion
          */
         $route = Route::of(
-            Any::from($this->routes)
+            ($this->mapRoutes)(Any::from($this->routes))
                 ->mapError(static fn($e) => match (true) {
                     $e instanceof NoRouteProvided => new NotFound,
                     default => $e,
