@@ -1406,4 +1406,40 @@ class ApplicationTest extends TestCase
                 $this->assertSame($expected, $response);
             });
     }
+
+    #[\Innmind\BlackBox\PHPUnit\Framework\Attributes\Group('wip')]
+    public function testRouteErrorIsNotSwallowed(): BlackBox\Proof
+    {
+        return $this
+            ->forAll(
+                Set::of(...ProtocolVersion::cases()),
+                Set::sequence(
+                    Set::compose(
+                        static fn($key, $value) => [$key, $value],
+                        Set::strings()->randomize(),
+                        Set::strings(),
+                    ),
+                )->between(0, 10),
+            )
+            ->prove(function($protocol, $variables) {
+                $expected = new \Exception;
+
+                $app = Application::http(Factory::build(), Environment::test($variables))
+                    ->service(Services::serviceA, static fn() => static fn() => Attempt::error($expected))
+                    ->routes(Routes::class);
+
+                $error = $app
+                    ->run(ServerRequest::of(
+                        Url::of('/foo'),
+                        Method::get,
+                        $protocol,
+                    ))
+                    ->match(
+                        static fn() => null,
+                        static fn($e) => $e,
+                    );
+
+                $this->assertSame($expected, $error);
+            });
+    }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- User generated errors were interpreted as "not found" errors.
+
 ## 4.0.1 - 2026-03-19
 
 ### Fixed
